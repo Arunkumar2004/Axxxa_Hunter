@@ -1,0 +1,67 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "default_agent": "hunter",
+  "skills": {
+    "paths": ["./skills", ".opencode/skills"]
+  },
+  "mcp": {
+    "caido": {
+      "type": "local",
+      "command": ["tools/bin/caido-mcp-server.exe", "serve"],
+      "enabled": true,
+      "environment": {
+        "CAIDO_URL": "{env:CAIDO_URL}"
+      }
+    },
+    "burp": {
+      "type": "local",
+      "command": ["java", "-jar", "{env:BURP_MCP_JAR}", "--sse-url", "http://127.0.0.1:9876"],
+      "enabled": true
+    },
+    "hackerone": {
+      "type": "local",
+      "command": ["python", "mcp/hackerone-mcp/server.py", "--mcp"],
+      "enabled": true
+    },
+    "browser": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "enabled": true
+    },
+    "nuclei": {
+      "type": "local",
+      "command": ["python", "mcp/nuclei-mcp/server.py"],
+      "enabled": true
+    },
+    "shodan": {
+      "type": "local",
+      "command": ["npx", "-y", "@burtthecoder/mcp-shodan"],
+      "enabled": true,
+      "environment": {
+        "SHODAN_API_KEY": "{env:SHODAN_API_KEY}"
+      }
+    }
+  },
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "rm *": "ask",
+      "rm -rf *": "deny",
+      "Remove-Item*": "ask",
+      "Remove-Item -Recurse*": "deny",
+      "git push*": "ask",
+      "git push --force*": "deny",
+      "git reset --hard*": "deny",
+      "git clean*": "deny",
+      "git checkout --*": "ask",
+      "del *": "ask",
+      "rd *": "ask",
+      "format *": "deny",
+      "diskpart*": "deny",
+      "shutdown*": "deny"
+    },
+    "websearch": "allow",
+    "webfetch": "allow"
+  }
+}

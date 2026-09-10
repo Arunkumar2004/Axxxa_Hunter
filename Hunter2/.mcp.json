@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "caido": {
+      "command": "D:/bughunting/Hunter2/tools/bin/caido-mcp-server.exe",
+      "args": ["serve"],
+      "env": { "CAIDO_URL": "http://127.0.0.1:8080" }
+    },
+    "hackerone": {
+      "command": "python",
+      "args": ["D:/bughunting/Hunter2/mcp/hackerone-mcp/server.py"],
+      "env": {}
+    }
+  }
+}
