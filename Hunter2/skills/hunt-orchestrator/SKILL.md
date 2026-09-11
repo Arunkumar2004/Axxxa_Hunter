@@ -7,6 +7,20 @@ description: Use when the user says "hunt", "autopilot", "start hunting", "full 
 
 This skill is the glue between you (the user) and the Agentic-Bug-Hunter toolkit. It tells the agent exactly what to run for each request.
 
+## Leader Doctrine — load these first (applies in BOTH OpenCode and Claude Code)
+
+Before running the mechanical loop below, the leader agent operates under:
+
+- **`rules/lead-commander.md`** — Startup Ritual (show the Connection Board via
+  `python tools/start.py <target>` **before** hunting), Depth Discipline (test every reachable
+  class to real depth; park-and-return, never abandon; show your work), and the
+  **Interaction Protocol** (OTP/MFA/password/captcha/login wall → **STOP and ASK the
+  operator**; use `/login-capture`; never enter creds, never skip the page).
+- **`rules/coverage-matrix.md`** — the A→Z class checklist (OWASP Web/API/LLM Top 10 +
+  PortSwigger). Track each class `FOUND / TESTED / N/A(reason) / PENDING`; the hunt is not
+  done while any reachable class is `PENDING`. End with the matrix readout.
+- **`skills/real-world-playbooks/`** — real disclosed-report tradecraft + chaining recipes.
+
 ## How to run a hunt (say: "hunt target.com")
 
 The agent executes, in order, WITHOUT asking per step (only at report submission):
@@ -27,7 +41,7 @@ The agent executes, in order, WITHOUT asking per step (only at report submission
 3. **Lead board** (never lose a lead):
    ```
    python tools/lead_board.py ingest <target>
-   python tools/lead_board.py show
+   python tools/lead_board.py show <target>
    ```
    Route each lead to its skill: "GraphQL endpoint → graphql-audit", "API at /v1 → api-security", "AI chatbot → llm-security", "S3 link → cloud-security", "coupon flow → race-conditions", "login flow → auth-attacks", "URL fetcher → ssrf", "serialized cookie → deserialization", "DOM-heavy → client-side-security".
 
@@ -49,7 +63,7 @@ The agent executes, in order, WITHOUT asking per step (only at report submission
    commands/report.md + skills/report-writing
    ```
 
-7. **Remember**: `python tools/lead_board.py touch <lead> done`, `commands/remember.md`.
+7. **Remember**: `python tools/lead_board.py touch <target> <lead_id> --status reported --note "..."` (statuses: `investigating` / `parked` / `killed` / `reported`), `commands/remember.md`.
 
 ## Command syntax (Windows PowerShell / Linux)
 
@@ -58,7 +72,7 @@ The agent executes, in order, WITHOUT asking per step (only at report submission
 | Recon | `python tools/hunt.py --target target.com` |
 | Scan only | `python tools/hunt.py --target target.com --scan-only` |
 | Validate | `python tools/validate.py "..."` |
-| Lead board | `python tools/lead_board.py show` |
+| Lead board | `python tools/lead_board.py show <target>` |
 | Shell tool | `bash tools/recon_engine.sh target.com` (Git Bash/WSL) |
 | PowerShell wrapper | `.\tools\run.ps1 recon_engine.sh target.com` |
 

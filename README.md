@@ -11,7 +11,7 @@ validation → report** — from either **OpenCode** or **Claude Code**.
 
 - **57 commands** — one word per task (`hunt`, `recon`, `csrf`, `web3-audit`, …)
 - **16 agents** — 1 primary `hunter` + 15 specialists (recon, API, cloud, LLM, race, business-logic, novel-vuln, validator, report-writer…)
-- **26 skills** — professional methodology (OWASP API Top 10, LLM Top 10 2025, Web2 vuln classes, Web3…)
+- **27 skills** — professional methodology (OWASP API Top 10, LLM Top 10 2025, Web2 vuln classes, Web3…)
 - **~80 tools** — real scanners & scripts (recon engine, IDOR/JWT/CORS/XXE/CSRF scanners, LLM red-team, OOB listener…)
 - **6 MCP integrations** — Caido, Burp, HackerOne, Playwright browser, Nuclei, Shodan
 - **Hunt memory** — findings/targets/leads persist across sessions
@@ -43,6 +43,43 @@ validation → report** — from either **OpenCode** or **Claude Code**.
 ---
 
 ## What's New in Hunter 2
+
+### 🧠 Real-Hunter Upgrade (Lead Commander + real-world knowledge)
+
+The biggest change: Hunter 2 now runs like a **disciplined human attacker**, identically in
+**Claude Code and OpenCode**, driven from a single crystal-clear starting point.
+
+- **Start dashboard:** on `hunt <target>` the leader first runs `python tools/start.py
+  <target>` — a big **AXXX HUNTER** banner + the live **Connection Board** (which tools,
+  MCPs, proxies Caido/Burp, agents (16), skills (27), scope, and the Chromium login-window
+  are actually armed) — **then** hunts. No silent starts, no assuming a tool is live.
+- **Lead Commander doctrine** ([`rules/lead-commander.md`](Hunter2/rules/lead-commander.md)):
+  full-power loop, **high→low priority**, **park-and-return** (no drift, no lead left behind),
+  **always chain**, and a **consolidated report** proving nothing was missed.
+- **Coverage Matrix** ([`rules/coverage-matrix.md`](Hunter2/rules/coverage-matrix.md)): the
+  canonical **A→Z class list** (OWASP Web + API + LLM Top 10 + PortSwigger full topic list).
+  Every class is tracked `FOUND / TESTED / N/A-with-reason / PENDING`; a hunt isn't "done"
+  while any reachable class is `PENDING`.
+- **`real-world-playbooks` skill (new):** **44 per-class playbooks** distilled from real
+  disclosed **HackerOne reports** (`reddelexc/hackerone-reports` — technique + bounty + link)
+  and hands-on **test-flow checklists** (`Az0x7/vulnerability-Checklist`), plus chaining
+  recipes and Hunter2 tool wiring. Refresh anytime: `python scripts/gen_real_world_playbooks.py`.
+- **Authenticated hunting, first-class:** the leader brings up **Caido/Burp**, has *you* log
+  in (via `/login-capture` — creds never touch chat), then replays your authenticated
+  requests to hunt IDOR/BOLA/BFLA/business-logic on protected APIs (two-account testing).
+- **Interaction protocol:** at any **OTP / MFA / password / captcha / login** wall the agent
+  **stops and asks you** — never skips the page, never enters your credentials, never solves a
+  CAPTCHA. The **browser MCP** (`@playwright/mcp` via Node/npx — no Python playwright needed)
+  opens a real Chromium window; you log in there (OTP/MFA) and the hunt resumes authenticated.
+  (`/login-capture`, which also saves the session to `.private/`, is an optional
+  Python-playwright alternative.)
+- **Lightweight learning loop:** reads prior per-target memory (`lead_board.py`,
+  `memory/leads/<target>.notes.md`) at start and writes back what worked/what was N/A at the
+  end — each hunt makes the next one smarter.
+- **Dual-CLI parity fixes:** the full-power Operating Contract now lives in **both**
+  `CLAUDE.md` and `AGENTS.md`/`hunter.md`; `.mcp.json` corrected (all 6 MCPs, relative paths,
+  fixed the broken Caido path + missing `--mcp` on HackerOne) so Claude Code and OpenCode
+  behave the same.
 
 - **5 new web scanners:** `/csrf`, `/xxe`, `/proto-pollution`, `/websocket` (CSWSH), `/hpp` (HTTP param pollution + `postMessage`). Each has a pure, unit-tested classifier and takes `--json`, `--cookie`, `-l list`.
 - **2 reasoning agents:** `business-logic-hunter` (workflow/price/coupon/wallet abuse) and `novel-vuln-reasoner` (unknown bug classes + chaining low findings into criticals).
@@ -284,11 +321,11 @@ Agents live in `agents/` (**single source of truth**); run
 
 ---
 
-## 7. Skills (26)
+## 7. Skills (27)
 
 Methodology playbooks the agents apply automatically.
 
-- **Core:** `bug-bounty` (master) · `bb-methodology` · `hunt-orchestrator` · `triage-validation` · `report-writing`
+- **Core:** `bug-bounty` (master) · `bb-methodology` · `hunt-orchestrator` · `real-world-playbooks` (real HackerOne-report tradecraft + per-class chaining, 44 classes) · `triage-validation` · `report-writing`
 - **Web:** `web2-recon` · `web2-vuln-classes` · `security-arsenal` · `client-side-security` · `ssrf` · `api-security` · `auth-attacks` · `race-conditions` · `deserialization` · `graphql-audit` · `argus`
 - **AI / CI:** `llm-security` · `cicd-security` · `client-reverse`
 - **Web3:** `web3-audit` · `meme-coin-audit`
@@ -437,7 +474,7 @@ Every vulnerability class Hunter 2 hunts, and the command/tool that finds each.
 
 Two separate things:
 
-- **Hunter itself** (57 commands, 16 agents, 26 skills, ~80 `tools/` scripts) — **already included, ~15 MB, no install.** It just needs Python. The pure-Python scanners (CSRF, XXE, CORS, JWT, prototype-pollution, WebSocket, HPP, recon-plus…) and the AI reasoning work with **zero external tools**.
+- **Hunter itself** (57 commands, 16 agents, 27 skills, ~80 `tools/` scripts) — **already included, ~15 MB, no install.** It just needs Python. The pure-Python scanners (CSRF, XXE, CORS, JWT, prototype-pollution, WebSocket, HPP, recon-plus…) and the AI reasoning work with **zero external tools**.
 - **External tools** (nuclei, ffuf, xsstrike, Chromium, slither…) — **optional add-ons**, installed system-wide (not into the Hunter folder), only the ones you want. Anything missing is **skipped with a hint**, never a crash.
 
 ### Disk footprint — pick your level
@@ -515,7 +552,7 @@ auto-detection details.
 ```
 agents/        16 subagent definitions      (SINGLE SOURCE OF TRUTH)
 commands/      57 slash commands
-skills/        26 methodology skills
+skills/        27 methodology skills
 tools/         ~80 scanners / recon / session / utility tools
 mcp/           HackerOne + Nuclei MCP servers
 .opencode/     OpenCode copies              (GENERATED — do not edit by hand)

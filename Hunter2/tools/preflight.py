@@ -12,7 +12,7 @@ the operator never assumes a tool/MCP/agent is live when it is only *shipped*.
 Pure stdlib. Cross-platform (Windows/Git-Bash/Linux). No network calls except a
 localhost port poke for local proxies (Caido/Burp).
 """
-import json, os, shutil, socket, sys, subprocess
+import json, os, re, shutil, socket, sys, subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -22,8 +22,7 @@ OK, WARN, BAD = "OK ", "WARN", "-- "
 CORE_TOOLS = ["subfinder","assetfinder","amass","dnsx","httpx","katana","gau",
               "waybackurls","nuclei","ffuf","nmap","gf","interactsh-client"]
 # known local fallback bins that Defender may quarantine on Windows
-FALLBACK_BINDIRS = [ROOT/"tools"/"bin", Path("D:/bughunting/Dukan/tools"),
-                    Path.home()/"go"/"bin"]
+FALLBACK_BINDIRS = [ROOT/"tools"/"bin", Path.home()/"go"/"bin"]
 
 def which(tool):
     p = shutil.which(tool)
@@ -43,15 +42,45 @@ def port_open(host, port, t=2.0):
     except OSError:
         return False
 
+def resolve_placeholder(val):
+    """Resolve config env placeholders against os.environ so the board shows the real URL.
+    Handles OpenCode '{env:VAR}' and Claude '${VAR}' / '${VAR:-default}' forms."""
+    if not isinstance(val, str) or not val:
+        return val or ""
+    m = re.match(r"^\{env:([A-Za-z_][A-Za-z0-9_]*)\}$", val)
+    if m:
+        return os.environ.get(m.group(1), "")
+    m = re.match(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}$", val)
+    if m:
+        return os.environ.get(m.group(1)) or (m.group(2) or "")
+    return val
+
+
 def load_mcp_config():
-    """Merge MCP servers declared for Claude Code (.mcp.json / .claude settings)."""
+    """Merge MCP servers declared for Claude Code (.mcp.json / .claude settings) AND
+    OpenCode (opencode.json 'mcp' block), so the board is identical in both CLIs."""
     servers = {}
+    # Claude Code style: {"mcpServers": {name: {command, env, ...}}}
     for f in [ROOT/".mcp.json", ROOT/".claude"/"settings.json",
               ROOT/".claude"/"settings.local.json", Path.home()/".claude.json"]:
         try:
             d = json.loads(f.read_text(encoding="utf-8"))
             for k, v in (d.get("mcpServers") or {}).items():
                 servers.setdefault(k, {"cfg": v, "src": f.name})
+        except Exception:
+            pass
+    # OpenCode style: {"mcp": {name: {type, command, enabled, environment}}}
+    for f in [ROOT/"opencode.json", ROOT/".opencode"/"opencode.json"]:
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+            for k, v in (d.get("mcp") or {}).items():
+                # normalise OpenCode 'environment' -> 'env' so downstream url probe works
+                cfg = dict(v)
+                if "environment" in cfg and "env" not in cfg:
+                    cfg["env"] = cfg["environment"]
+                if v.get("enabled") is False:
+                    cfg["_disabled"] = True
+                servers.setdefault(k, {"cfg": cfg, "src": f.name})
         except Exception:
             pass
     return servers
@@ -69,7 +98,7 @@ def main():
     mcp = load_mcp_config()
     for name, meta in mcp.items():
         env = (meta["cfg"].get("env") or {})
-        url = env.get("CAIDO_URL") or env.get("BURP_API_URL") or ""
+        url = resolve_placeholder(env.get("CAIDO_URL") or env.get("BURP_API_URL") or "")
         reachable = None
         if url.startswith("http"):
             try:

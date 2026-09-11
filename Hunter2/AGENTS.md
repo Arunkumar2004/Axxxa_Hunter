@@ -2,9 +2,42 @@
 
 This repo is an agent-portable bug bounty plugin for professional hunting across HackerOne, Bugcrowd, Intigriti, and Immunefi. It supports Claude Code, OpenCode, Pi Agent, Codex-style Agent Skills, and shared `.agents/skills` harnesses.
 
+## Operating Contract (READ FIRST — this is the default, no need to restate it)
+
+When the operator says anything like **"hunt", "start hunt", "use this tool", "use Hunter2", "go", "full send"** on a target, treat it as standing authorization for the **FULL-POWER flow**. Do **not** ask "should I use all the tools / agents / MCPs?" — the answer is always **yes**. Specifically:
+
+1. **PREFLIGHT FIRST, ALWAYS.** Begin every hunt by running `python tools/start.py <target>` — the **AXXX HUNTER start dashboard** (banner + connection board; wraps `preflight.py`) — and reporting the readout — what tools, MCPs, proxies (Caido/Burp), agents, and skills are actually armed. **Never assume a tool/MCP is live just because it's shipped.** State clearly what is connected vs. what needs setup.
+2. **USE EVERYTHING APPLICABLE.** All installed tools (curl/python fallback when a native binary is AV-blocked), all relevant **agents/subagents in parallel**, all **skills**, and any connected **MCP** (Caido for authenticated replay, HackerOne for program data).
+3. **HUNT EVERY BUG CLASS — not a subset.** The 26 web2 classes **plus** RCE, SQLi, SSTI, XXE, insecure deserialization, HTTP request smuggling, cache poisoning/deception, SSRF, LFI, file upload, IDOR/BOLA/BFLA, business logic, race conditions, GraphQL, auth/session/JWT/SAML/OAuth/OIDC/MFA, ATO chains, subdomain takeover, cloud/CI-CD/k8s misconfig, prototype pollution, CORS/CRLF/host-header, dependency confusion/supply chain, mobile, web3, and LLM/agentic. **Match the class to the reachable surface**; say why a class is N/A rather than silently skipping it.
+4. **NEVER LOSE A LEAD.** After recon, run `python tools/lead_board.py ingest <target>` + `show`, route each finding to its `hunt-*` skill, and `touch` status as you go. Surface stale high-priority leads unprompted.
+5. **ALWAYS TRY TO CHAIN.** Before finalizing, run the chaining pass (`chain-builder` / `/chain`): combine every finding — including low/medium/info — into higher-severity **A->B->C chains** (IDOR->ATO, SSRF->metadata->creds, open-redirect->OAuth-token-theft, XSS->ATO, source-leak->secret->API, prompt-injection->tool-abuse->IDOR). Never report findings in isolation without asking "what does this unlock?"
+6. **FINISH WITH A CONSOLIDATED REPORT.** Full flow (in order): **scope -> preflight -> recon -> lead board -> rank -> hunt (all classes) -> chain -> validate (7-Question Gate) -> report.** Deliver a single merged findings report at the end.
+
+**Safety rails always hold (full power != reckless):** read full scope first; in-scope assets only; no DoS/load testing; subdomain-takeover is **detect-and-report only**; minimal redacted PoCs (no bulk PII scraping); never create accounts or enter the operator's credentials — the operator logs in themselves via the browser.
+
+## Leader Doctrine (the Lead Commander) — READ THESE TWO FILES
+
+The primary agent runs the hunt like an experienced human attacker, not a scanner that
+drifts. On **every** hunt it follows:
+
+- **`rules/lead-commander.md`** — the **Startup Ritual** (show a Connection Board of
+  tools/MCPs/proxies/agents/skills/scope *before* hunting), the full loop, **Depth
+  Discipline** (test every reachable class to real depth; park-and-return, never abandon;
+  show your work continuously), the **Interaction Protocol** (on any OTP/MFA/password/
+  captcha/login wall → **STOP and ASK the operator**, never skip the page, never enter
+  creds), and parallel specialist orchestration.
+- **`rules/coverage-matrix.md`** — the canonical **A→Z class list** (OWASP Web Top 10 +
+  API Top 10 + LLM Top 10 + PortSwigger full topic list). Every class gets a status
+  (`FOUND / TESTED / N/A-with-reason / PENDING`); a hunt is **not done** while any
+  reachable class is `PENDING`. End every hunt with the matrix readout.
+- **`skills/real-world-playbooks/`** — real disclosed-report tradecraft + chaining recipes
+  distilled from HackerOne/writeups, applied per class.
+
 ## What's Here
 
-### Skills (13 domains — load with `/bug-bounty`, `/web2-recon`, `/token-scan`, etc.)
+### Skills (27 domains — load with `/bug-bounty`, `/web2-recon`, `/token-scan`, etc.)
+
+> Full set lives in `skills/` (27 dirs), auto-registered via `opencode.json`. **New: `real-world-playbooks`** — real disclosed-HackerOne-report tradecraft + per-class chaining.
 
 | Skill | Domain |
 |---|---|
@@ -69,7 +102,7 @@ This repo is an agent-portable bug bounty plugin for professional hunting across
 | `/spray` | `/spray <url> --mode http-form\|oauth\|o365\|okta --users <f> --passes <f>` — password spray with hard guards |
 | `/graphql-audit` | `/graphql-audit <url>` — full GraphQL audit |
 
-### Agents (15 specialized agents)
+### Agents (16 — 1 primary `hunter` + 15 specialists)
 
 - `recon-agent` — subdomain enum + live host discovery
 - `report-writer` — generates H1/Bugcrowd/Immunefi reports
@@ -172,5 +205,5 @@ Install for another harness:
 2. NEVER hunt theoretical bugs — "Can attacker do this RIGHT NOW?"
 3. Run 7-Question Gate BEFORE writing any report
 4. KILL weak findings fast — N/A hurts your validity ratio
-5. 5-minute rule — nothing after 5 min = move on
+5. Park-and-return — a stalled lead gets parked (note why) and returned to before closing; never abandon it silently
 6. **LEAD BOARD — never lose a lead.** After recon, run `lead_board.py ingest <target>` + `show`, and route each finding to its `hunt-*` skill in plain language ("GraphQL endpoint → hunt-graphql"). When starting/killing/reporting a lead, `touch` its status. The hunter focuses on one lead at a time; the board remembers the rest so none is forgotten. Surface stale high-priority leads unprompted.

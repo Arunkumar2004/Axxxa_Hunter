@@ -34,7 +34,7 @@ def fetch_programs():
                 "curl", "-s", "-H", "Accept: application/json",
                 "https://hackerone.com/opportunities/all/search?ordering=started_accepting_at&limit=100&asset_types=URL&asset_types=WILDCARD&asset_types=DOMAIN"
             ],
-            capture_output=True, text=True, timeout=30
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30
         )
         if result.returncode == 0 and result.stdout.strip():
             data = json.loads(result.stdout)
@@ -54,7 +54,7 @@ def fetch_programs():
                     "curl", "-s",
                     "https://raw.githubusercontent.com/arkadiyt/bounty-targets-data/main/data/hackerone_data.json"
                 ],
-                capture_output=True, text=True, timeout=30
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30
             )
             if result.returncode == 0 and result.stdout.strip():
                 data = json.loads(result.stdout)

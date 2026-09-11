@@ -1,14 +1,34 @@
 {
   "mcpServers": {
     "caido": {
-      "command": "D:/bughunting/Hunter2/tools/bin/caido-mcp-server.exe",
+      "command": "tools/bin/caido-mcp-server.exe",
       "args": ["serve"],
-      "env": { "CAIDO_URL": "http://127.0.0.1:8080" }
+      "env": { "CAIDO_URL": "${CAIDO_URL:-http://127.0.0.1:8080}" }
+    },
+    "burp": {
+      "command": "java",
+      "args": ["-jar", "${BURP_MCP_JAR}", "--sse-url", "http://127.0.0.1:9876"],
+      "env": {}
     },
     "hackerone": {
       "command": "python",
-      "args": ["D:/bughunting/Hunter2/mcp/hackerone-mcp/server.py"],
+      "args": ["mcp/hackerone-mcp/server.py", "--mcp"],
       "env": {}
+    },
+    "browser": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "env": {}
+    },
+    "nuclei": {
+      "command": "python",
+      "args": ["mcp/nuclei-mcp/server.py"],
+      "env": {}
+    },
+    "shodan": {
+      "command": "npx",
+      "args": ["-y", "@burtthecoder/mcp-shodan"],
+      "env": { "SHODAN_API_KEY": "${SHODAN_API_KEY}" }
     }
   }
 }
