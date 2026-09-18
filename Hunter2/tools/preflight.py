@@ -18,6 +18,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OK, WARN, BAD = "OK ", "WARN", "-- "
 
+# Prefer this repo's own tools/bin so recon binaries resolve LOCALLY
+# (self-contained) instead of from any other project that is on PATH.
+_LOCAL_BIN = str(ROOT / "tools" / "bin")
+if _LOCAL_BIN not in os.environ.get("PATH", "").split(os.pathsep):
+    os.environ["PATH"] = _LOCAL_BIN + os.pathsep + os.environ.get("PATH", "")
+
 # ---- external CLI tools the recon/vuln pipelines expect -------------------
 CORE_TOOLS = ["subfinder","assetfinder","amass","dnsx","httpx","katana","gau",
               "waybackurls","nuclei","ffuf","nmap","gf","interactsh-client"]

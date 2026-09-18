@@ -61,6 +61,14 @@ def crlf_payloads(canary: str = CANARY) -> list[str]:
         f"%0d%0a%20{marker}",       # CRLF + leading space (header-fold)
         f"%u000d%u000a{marker}",    # IIS unicode escape
     ]
+    # Append real-world CRLF vectors (each carries {MARKER} so the canary invariant holds).
+    try:
+        from tools.payload_loader import load_lines
+        for p in load_lines("crlf", MARKER=marker):
+            if p not in seqs:
+                seqs.append(p)
+    except Exception:
+        pass
     return seqs
 
 

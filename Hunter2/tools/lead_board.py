@@ -29,7 +29,16 @@ import json
 import os
 import re
 import secrets
+import sys
 from datetime import datetime, timezone
+
+# Windows consoles default to cp1252 and crash on the board's emoji/box chars.
+# Force UTF-8 so the tool is cross-platform (no-op where already UTF-8).
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEADS_DIR = os.path.join(ROOT, "memory", "leads")

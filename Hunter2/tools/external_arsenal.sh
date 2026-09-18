@@ -14,7 +14,10 @@
 
 set -uo pipefail
 
-export PATH="$HOME/go/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+# Prepend this repo's own tools/bin so recon binaries are found locally
+# (self-contained), not from any other project that happens to be on PATH.
+_ARSENAL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+export PATH="$_ARSENAL_DIR/bin:$HOME/go/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 # tool|category|install-hint|upstream-url
 ARSENAL_TOOLS=(

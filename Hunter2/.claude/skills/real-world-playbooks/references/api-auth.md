@@ -1,7 +1,7 @@
 # Real-World Playbook — API Auth (BOLA/BFLA/BOPLA/Mass-Assignment)
 
 **Class:** `api-auth` · **Coverage-matrix tier:** 0 · **Hunter2:** /api-audit · tools/api_security_scanner.py · tools/apispec_idor.py · **Skill:** api-security
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Why it pays (real bounty signal)
 Top disclosed API Auth reports peak at **$39,999**. Rewarded across: AMBER AI, Aiven Ltd, GitHub, GitLab, Grab, HackerOne, Internet Bug Bounty, LY Corporation.
@@ -9,13 +9,13 @@ Top disclosed API Auth reports peak at **$39,999**. Rewarded across: AMBER AI, A
 ## How real hackers found it — top disclosed reports
 *(title = the actual technique; open the report for the full PoC)*
 
-- **[Pre-Submission][H1-4420-2019] API access to Phabricator on code.uberinternal.com from leaked certificate in git repo** — Uber, $39,999 · 448👍 · [591813](https://hackerone.com/reports/591813)
-- **Exposed Kubernetes API - RCE/Exposed Creds** — Snapchat, $25,000 · 1187👍 · [455645](https://hackerone.com/reports/455645)
-- **DOS via Mutation Aliasing in GraphQL Account Recovery Phone Number Verification API** — HackerOne, $12,500 · 175👍 · [3287208](https://hackerone.com/reports/3287208)
+- **[Pre-Submission][H1-4420-2019] API access to Phabricator on code.uberinternal.com from leaked certificate in git repo** — Uber, $39,999 · 453👍 · [591813](https://hackerone.com/reports/591813)
+- **Exposed Kubernetes API - RCE/Exposed Creds** — Snapchat, $25,000 · 1189👍 · [455645](https://hackerone.com/reports/455645)
+- **DOS via Mutation Aliasing in GraphQL Account Recovery Phone Number Verification API** — HackerOne, $12,500 · 180👍 · [3287208](https://hackerone.com/reports/3287208)
 - **Git flag injection - Search API with scope 'blobs'** — GitLab, $7,000 · 130👍 · [682442](https://hackerone.com/reports/682442)
 - **Exposed Cortex API at https://cortex-ingest.shopifycloud.com/** — Shopify, $6,300 · 99👍 · [1258871](https://hackerone.com/reports/1258871)
-- **Blind SSRF to internal services in matrix preview_link API** — Reddit, $6,000 · 341👍 · [1960765](https://hackerone.com/reports/1960765)
-- **Apache Flink RCE via GET jar/plan API Endpoint** — Aiven Ltd, $6,000 · 131👍 · [1418891](https://hackerone.com/reports/1418891)
+- **Blind SSRF to internal services in matrix preview_link API** — Reddit, $6,000 · 343👍 · [1960765](https://hackerone.com/reports/1960765)
+- **Apache Flink RCE via GET jar/plan API Endpoint** — Aiven Ltd, $6,000 · 133👍 · [1418891](https://hackerone.com/reports/1418891)
 - **DoS via markdown API from unauthenticated user** — GitHub, $4,000 · 54👍 · [1619604](https://hackerone.com/reports/1619604)
 - **Leak ██████████ information in real time through API request** — Grab, $3,000 · 103👍 · [307050](https://hackerone.com/reports/307050)
 - **Missing authentication in buddy group API of LINE TIMELINE** — LY Corporation, $3,000 · 47👍 · [1283938](https://hackerone.com/reports/1283938)
@@ -25,8 +25,8 @@ Top disclosed API Auth reports peak at **$39,999**. Rewarded across: AMBER AI, A
 - **Undocumented `fileCopy` GraphQL API** — Shopify, $2,000 · 157👍 · [981472](https://hackerone.com/reports/981472)
 - **Выполнение API-методов при открытии сообщества/приложения** — VK.com, $2,000 · 43👍 · [1354452](https://hackerone.com/reports/1354452)
 - **Ability to view monitor names of other NR accounts through internal API (v3) via "monitor_id" parameter** — New Relic, $2,000 · 8👍 · [462321](https://hackerone.com/reports/462321)
-- **Full access to InDrive jira panel via exposed API token** — inDrive, $1,500 · 125👍 · [1785145](https://hackerone.com/reports/1785145)
 - **Support Portal Takeover via Leaked API KEY** — AMBER AI, $1,500 · 90👍 · [1766228](https://hackerone.com/reports/1766228)
+- **Internal API endpoint discloses full account name of email address associated with unconfirmed user** — New Relic, $1,500 · 63👍 · [332381](https://hackerone.com/reports/332381)
 
 ## Test flow / checklist — do these in order
 *(imported from Az0x7/vulnerability-Checklist; run each, mark result in the coverage matrix)*
@@ -1211,6 +1211,154 @@ Automating Mass Assignment Attacks with Arjun and burp Suite Intruder
 ```
  arjun --headers "Content-Type: application/json]" -u http://vulnhost.com/api/register -m JSON --include='{$arjun$}'
 ```
+
+## Real payloads
+*(actual attack strings — adapt to the injection context; fire only where a real sink exists)*
+
+### PayloadsAllTheThings
+```
+{
+    "username": "attacker",
+    "email": "attacker@email.com",
+    "password": "unsafe_password",
+    "isAdmin": true
+}
+```
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From OWASP WSTG (testing guide)
+### Mass Assignment
+
+|ID          |
+|------------|
+|WSTG-INJT-20|
+
+#### Summary
+
+Modern web applications are very often based on frameworks. Many of these web application frameworks allow automatic binding of user input (in the form of HTTP request parameters) to internal objects. This is often called autobinding.
+This feature can be sometimes exploited to access fields that were never intended to be modified from outside leading to privilege escalation, data tampering, bypass of security mechanisms, and more.
+In this case there is a Mass Assignment vulnerability.
+
+Examples of sensitive properties:
+
+- **Permission-related properties**: should only be set by privileged users (e.g. `is_admin`, `role`, `approved`).
+- **Process-dependent properties**: should only be set internally, after a process is completed (e.g. `balance`, `status`, `email_verified`)
+- **Internal properties**: should only be set internally by the application (e.g. `created_at`, `updated_at`)
+
+#### Test Objectives
+
+- Identify requests that modify objects
+- Assess if it is possible to modify fields never intended to be modified from outside
+
+#### How to Test
+
+The following is a classic example that can help to illustrate the issue.
+
+Suppose a Java web application with a `User` object similar to the following:
+
+```java
+public class User {
+   private String username;
+   private String password;
+   private String email;
+   private boolean isAdmin;
+
+   //Getters & Setters
+}
+```
+
+To create a new `User` the web application implements the following view:
+
+```html
+<form action="/createUser" method="POST">
+     <input name="username" type="text">
+     <input name="password" type="text">
+     <input name="email" text="text">
+     <input type="submit" value="Create">
+</form>
+```
+
+The controller that handles the creation request (Spring provides the automatic bind with the `User` model):
+
+```java
+@RequestMapping(value = "/createUser", method = RequestMethod.POST)
+public String createUser(User user) {
+   userService.add(user);
+   return "successPage";
+}
+```
+
+*(truncated — open the source link for the full method)*
+
+### From AllAboutBugBounty
+### Mass Assignment Attack
+
+#### Introduction
+Occurs when an app allows a user to manually add parameters in an HTTP Request & the app process value of these parameters when processing the HTTP Request & it affects the response that is returned to the user. Usually occurs in Ruby on Rails / NodeJS
+
+#### How to exploit
+- Normal request
+```
+POST /editdata HTTP/1.1
+Host: target.com
+...
+
+username=daffa
+```
+The response
+```
+HTTP/1.1 200 OK
+...
+
+{"status":"success","username":"daffainfo","isAdmin":"false"}
+```
+
+- Modified Request 
+```
+POST /editdata HTTP/1.1
+Host: target.com
+...
+
+username=daffa&admin=true
+```
+
+```
+HTTP/1.1 200 OK
+...
+
+{"status":"success","username":"daffainfo","isAdmin":"true"}
+```
+
+#### References
+* [Pentester Academy](https://blog.pentesteracademy.com/hunting-for-mass-assignment-56ed73095eda)
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### GraphQL
+
+
+#### Introduction
+
+GraphQL is **highlighted** as an **efficient alternative** to REST API, offering a simplified approach for querying data from the backend. In contrast to REST, which often necessitates numerous requests across varied endpoints to gather data, GraphQL enables the fetching of all required information through a **single request**. This streamlining significantly **benefits developers** by diminishing the intricacy of their data fetching processes.<sup>[[3]](#references)</sup>
+
+#### GraphQL and Security
+
+GraphQL does not provide application authentication or authorization by itself; developers must enforce those controls in the surrounding application and in resolver logic. Without them, endpoints may expose sensitive information or operations to unauthenticated or unauthorized users.<sup>[[1]](#references)[[6]](#references)</sup>
+
+##### Directory Brute Force Attacks and GraphQL
+
+When looking for exposed GraphQL endpoints, include common paths in content-discovery scans. Practical GraphQL testing guides use paths and probes such as these:<sup>[[4]](#references)[[5]](#references)</sup>
+
+- `/graphql`
+- `/graphiql`
+- `/graphql.php`
+- `/graphql/console`
+- `/api`
+- `/api/graphql`
+- `/graphql/api`
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - BFLA: call admin function as low-priv user → privilege escalation

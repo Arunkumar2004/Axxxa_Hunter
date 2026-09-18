@@ -1,7 +1,7 @@
 # Real-World Playbook — Authentication & Session Flaws
 
 **Class:** `auth-session` · **Coverage-matrix tier:** 0 · **Hunter2:** /auth-hunt · tools/jwt_scanner.py · tools/h1_oauth_tester.py · **Skill:** auth-attacks
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Why it pays (real bounty signal)
 Top disclosed Authentication & Session Flaws reports peak at **$20,160**. Rewarded across: Basecamp, GitHub, GitHub Security Lab, Internet Bug Bounty, LY Corporation, Nextcloud, Slack, TikTok.
@@ -9,10 +9,10 @@ Top disclosed Authentication & Session Flaws reports peak at **$20,160**. Reward
 ## How real hackers found it — top disclosed reports
 *(title = the actual technique; open the report for the full PoC)*
 
-- **Potential pre-auth RCE on Twitter VPN** — X / xAI, $20,160 · 1241👍 · [591295](https://hackerone.com/reports/591295)
-- **Spring Actuator endpoints publicly available and broken authentication** — LY Corporation, $12,500 · 233👍 · [838635](https://hackerone.com/reports/838635)
+- **Potential pre-auth RCE on Twitter VPN** — X / xAI, $20,160 · 1243👍 · [591295](https://hackerone.com/reports/591295)
+- **Spring Actuator endpoints publicly available and broken authentication** — LY Corporation, $12,500 · 234👍 · [838635](https://hackerone.com/reports/838635)
 - **Account Takeover via Authentication Bypass in TikTok Account Recovery** — TikTok, $12,000 · 171👍 · [2443228](https://hackerone.com/reports/2443228)
-- **Authentication bypass on gist.github.com through SSH Certificates** — GitHub, $10,000 · 181👍 · [1901040](https://hackerone.com/reports/1901040)
+- **Authentication bypass on gist.github.com through SSH Certificates** — GitHub, $10,000 · 182👍 · [1901040](https://hackerone.com/reports/1901040)
 - **OneLogin authentication bypass on WordPress sites** — Uber, $10,000 · 58👍 · [136169](https://hackerone.com/reports/136169)
 - **SAML Authentication Bypass on uchat.uberinternal.com** — Uber, $8,500 · 87👍 · [223014](https://hackerone.com/reports/223014)
 - **OneLogin authentication bypass on WordPress sites via XMLRPC** — Uber, $7,000 · 83👍 · [138869](https://hackerone.com/reports/138869)
@@ -20,10 +20,10 @@ Top disclosed Authentication & Session Flaws reports peak at **$20,160**. Reward
 - **[JAVA]: CWE-347 - Improper Verification of Cryptographic Signature : Potential for Auth Bypass** — GitHub Security Lab, $4,000 · 4👍 · [1212274](https://hackerone.com/reports/1212274)
 - **[Android] Directory traversal leading to disclosure of auth tokens** — Slack, $3,500 · 50👍 · [1378889](https://hackerone.com/reports/1378889)
 - **Missing authentication in buddy group API of LINE TIMELINE** — LY Corporation, $3,000 · 47👍 · [1283938](https://hackerone.com/reports/1283938)
-- **Authentication Bypass in ID4me handling via Missing JWT Signature Verification in User OIDC** — Nextcloud, $2,500 · 51👍 · [3489490](https://hackerone.com/reports/3489490)
+- **Authentication Bypass in ID4me handling via Missing JWT Signature Verification in User OIDC** — Nextcloud, $2,500 · 54👍 · [3489490](https://hackerone.com/reports/3489490)
 - **Java: CWE-522 Insecure basic authentication** — GitHub Security Lab, $2,300 · 10👍 · [963815](https://hackerone.com/reports/963815)
 - **TLS client authentication can be bypassed due to ticket resumption** — Internet Bug Bounty, $2,162 · 31👍 · [2978267](https://hackerone.com/reports/2978267)
-- **Improper bot-authentication allows to impersonate any user when sending messages in a room** — Basecamp, $2,000 · 126👍 · [3329310](https://hackerone.com/reports/3329310)
+- **Improper bot-authentication allows to impersonate any user when sending messages in a room** — Basecamp, $2,000 · 127👍 · [3329310](https://hackerone.com/reports/3329310)
 - **Pre-auth Remote Code Execution on multiple Uber SSL VPN servers** — Uber, $2,000 · 80👍 · [540242](https://hackerone.com/reports/540242)
 - **Authentication Bypass with usage of PreSignedURL** — ownCloud, $2,000 · 43👍 · [2337427](https://hackerone.com/reports/2337427)
 - **Authentication bypass leads to sensitive data exposure (token+secret)** — Slack, $2,000 · 10👍 · [129918](https://hackerone.com/reports/129918)
@@ -134,6 +134,99 @@ Test if password confirmation is necessary with these actions:
 4. Now logout and use the password reset link which was mailed to "a@x.com" in step 2.
 5. Password will be changed.
 ```
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From OWASP WSTG (testing guide)
+### Bypassing Authentication Schema
+
+|ID          |
+|------------|
+|WSTG-ATHN-04|
+
+#### Summary
+
+In computer security, authentication is the process of attempting to verify the digital identity of the sender of a communication. A common example of such a process is the log on process. Testing the authentication schema means understanding how the authentication process works and using that information to circumvent the authentication mechanism.
+
+While most applications require authentication to gain access to private information or to execute tasks, not every authentication method is able to provide adequate security. Negligence, ignorance, or simple understatement of security threats often result in authentication schemes that can be bypassed by simply skipping the log in page and directly calling an internal page that is supposed to be accessed only after authentication has been performed.
+
+In addition, it is often possible to bypass authentication measures by tampering with requests and tricking the application into thinking that the user is already authenticated. This can be accomplished either by modifying the given URL parameter, by manipulating the form, or by counterfeiting sessions.
+
+Problems related to the authentication schema can be found at different stages of the software development lifecycle (SDLC), like the design, development, and deployment phases:
+
+- In the design phase errors can include a wrong definition of application sections to be protected, the choice of not applying strong encryption protocols for securing the transmission of credentials, and many more.
+- In the development phase errors can include the incorrect implementation of input validation functionality or not following the security best practices for the specific language.
+- In the application deployment phase, there may be issues during the application setup (installation and configuration activities) due to a lack in required technical skills or due to the lack of good documentation.
+
+#### Test Objectives
+
+- Ensure that authentication is applied across all services that require it.
+
+#### How to Test
+
+There are several methods of bypassing the authentication schema that is used by a web application:
+
+- Parameter modification
+- Session ID prediction
+- SQL injection
+
+##### Parameter Modification
+
+Another problem related to authentication design is when the application verifies a successful log in on the basis of a fixed value parameters. A user could modify these parameters to gain access to the protected areas without providing valid credentials. In the example below, the "authenticated" parameter is changed to a value of "yes", which allows the user to gain access. In this example, the parameter is in the URL, but a proxy could also be used to modify the parameter, especially when the parameters are sent as form elements in a POST request or when the parameters are stored in a cookie.
+
+```html
+https://www.site.com/page.asp?authenticated=no
+
+raven@blackbox /home $nc www.site.com 80
+GET /page.asp?authenticated=yes HTTP/1.0
+
+HTTP/1.1 200 OK
+Date: Sat, 11 Nov 2006 10:22:44 GMT
+Server: Apache
+Connection: close
+Content-Type: text/html; charset=iso-8859-1
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<HTML><HEAD>
+</HEAD><BODY>
+<H1>You Are Authenticated</H1>
+</BODY></HTML>
+```
+
+*Figure 4.4.4-1: Parameter Modified Request*
+
+##### Session ID Prediction
+
+Many web applications manage authentication by using session identifiers (session IDs). Therefore, if session ID generation is predictable, a malicious user could be able to find a valid session ID and gain unauthorized access to the application, impersonating a previously authenticated user.
+
+*(truncated — open the source link for the full method)*
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### PAM - Pluggable Authentication Modules
+
+
+##### Basic Information
+
+**PAM (Pluggable Authentication Modules)** acts as a security mechanism that **verifies the identity of users attempting to access computer services**, controlling their access based on various criteria. It's akin to a digital gatekeeper, ensuring that only authorized users can engage with specific services while potentially limiting their usage to prevent system overloads.
+
+###### Configuration Files
+
+- **Solaris** supports the legacy central file `/etc/pam.conf`, but current guidance prefers service files under `/etc/pam.d`.<sup>[[10]](#references)</sup>
+- **Linux systems** prefer a directory approach, storing service-specific configurations within `/etc/pam.d`. For instance, the configuration file for the login service is found at `/etc/pam.d/login`.<sup>[[1]](#references)</sup>
+
+An example of a PAM configuration for the login service might look like this:
+
+```
+auth required /lib/security/pam_securetty.so
+auth required /lib/security/pam_nologin.so
+auth sufficient /lib/security/pam_ldap.so
+auth required /lib/security/pam_unix_auth.so try_first_pass
+account sufficient /lib/security/pam_ldap.so
+account required /lib/security/pam_unix_acct.so
+password required /lib/security/pam_cracklib.so
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - Weak/session-fixation → hijack → ATO

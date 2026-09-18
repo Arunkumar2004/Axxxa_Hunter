@@ -9,6 +9,12 @@ Usage:
   python3 tools/mindmap.py --target api.example.com --type api --tech "jwt,openapi"
 """
 
+import sys as _sys
+for _s in (_sys.stdout, _sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 import argparse
 import os
 import sys

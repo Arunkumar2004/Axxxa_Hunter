@@ -36,3 +36,8 @@ venv/
 nmap-output/
 .atlas/
 .forge/
+
+# Local recon binaries — huge, OS-specific, machine-local (installed via
+# install_tools, NOT committed). caido-mcp-server.exe stays tracked.
+tools/bin/*
+!tools/bin/caido-mcp-server.exe

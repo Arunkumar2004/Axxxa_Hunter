@@ -1,7 +1,7 @@
 # Real-World Playbook — MFA / 2FA Bypass
 
 **Class:** `mfa-2fa` · **Coverage-matrix tier:** 1 · **Hunter2:** /auth-hunt · vuln_scanner.sh · **Skill:** auth-attacks
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Why it pays (real bounty signal)
 Top disclosed MFA / 2FA Bypass reports peak at **$10,000**. Rewarded across: CS Money, Cloudflare Public Bug Bounty, Coinbase, HackerOne, Mozilla, Nextcloud, Shopify, SideFX.
@@ -9,13 +9,13 @@ Top disclosed MFA / 2FA Bypass reports peak at **$10,000**. Rewarded across: CS 
 ## How real hackers found it — top disclosed reports
 *(title = the actual technique; open the report for the full PoC)*
 
-- **Hacker can bypass 2FA requirement and reporter blacklist through embedded submission form** — HackerOne, $10,000 · 207👍 · [418767](https://hackerone.com/reports/418767)
+- **Hacker can bypass 2FA requirement and reporter blacklist through embedded submission form** — HackerOne, $10,000 · 208👍 · [418767](https://hackerone.com/reports/418767)
 - **“email” MFA mode allows bypassing MFA from victim’s device when the device trust is not expired** — Superhuman (formerly Grammarly), $2,500 · 82👍 · [665722](https://hackerone.com/reports/665722)
-- **TikTok 2FA Bypass** — TikTok, $1,564 · 193👍 · [1247108](https://hackerone.com/reports/1247108)
+- **TikTok 2FA Bypass** — TikTok, $1,564 · 194👍 · [1247108](https://hackerone.com/reports/1247108)
 - **Misconfiguration in Two Factor Authorisation** — Shopify, $1,500 · 40👍 · [178293](https://hackerone.com/reports/178293)
 - **Второй способ обхода 2FA** — VK.com, $1,050 · 17👍 · [167121](https://hackerone.com/reports/167121)
 - **Account deletion using the /v1/account/destroy API endpoint using account password without 2FA verification** — Mozilla, $1,000 · 52👍 · [2197244](https://hackerone.com/reports/2197244)
-- **Sign in with Apple works on existing accounts, bypasses 2FA** — Cloudflare Public Bug Bounty, $1,000 · 31👍 · [1593404](https://hackerone.com/reports/1593404)
+- **Sign in with Apple works on existing accounts, bypasses 2FA** — Cloudflare Public Bug Bounty, $1,000 · 32👍 · [1593404](https://hackerone.com/reports/1593404)
 - **Обход 2ух-шаговой авторизации / 2FA Bypass** — VK.com, $1,000 · 21👍 · [163834](https://hackerone.com/reports/163834)
 - **Bypassing 2FA for BTC transfers** — Coinbase, $1,000 · 18👍 · [10554](https://hackerone.com/reports/10554)
 - **Pre-generation of 2FA secret/backup codes seems like an unnecessary risk** — HackerOne, $1,000 · 15👍 · [100509](https://hackerone.com/reports/100509)
@@ -339,6 +339,49 @@ Steps To Reproduce:
 6- Before forwarding the request to server, remove the code and forward
 7- Turnoff Intercept and notice that your login request has been fulfilled
 ```
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From HowToHunt
+### Some MindMaps
+---
+##### 2FA Bypass by Hack3rScr0lls
+
+##### Source
+* [https://twitter.com/hackerscrolls/status/1256276376019230720](https://twitter.com/hackerscrolls/status/1256276376019230720)
+
+##### 2FA Bypass by Harshbothra
+* [MindMap](https://www.mindmeister.com/1736437018?t=SEeZOmvt01)
+
+##### Author
+* [KathanP19](https://twitter.com/KathanP19)
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### WWW2Exec - GOT/PLT
+
+
+#### **Basic Information**
+
+##### **GOT: Global Offset Table**
+
+The **Global Offset Table (GOT)** is a mechanism used in dynamically linked binaries to manage the **addresses of external functions**. Since these **addresses are not known until runtime** (due to dynamic linking), the GOT provides a way to **dynamically update the addresses of these external symbols** once they are resolved.
+
+Each entry in the GOT corresponds to a symbol in the external libraries that the binary may call. When a **function is first called, its actual address is resolved by the dynamic linker and stored in the GOT**. Subsequent calls to the same function use the address stored in the GOT, thus avoiding the overhead of resolving the address again.
+
+##### **PLT: Procedure Linkage Table**
+
+The **Procedure Linkage Table (PLT)** works closely with the GOT and serves as a trampoline to handle calls to external functions. When a binary **calls an external function for the first time, control is passed to an entry in the PLT associated with that function**. This PLT entry is responsible for invoking the dynamic linker to resolve the function's address if it has not already been resolved. After the address is resolved, it is stored in the **GOT**.
+
+**Therefore,** GOT entries are used directly once the address of an external function or variable is resolved. **PLT entries are used to facilitate the initial resolution** of these addresses via the dynamic linker.
+
+#### Get Execution
+
+##### Check the GOT
+
+Use `readelf -SW ./exec | grep -E '\.got(\.plt)?'` or `objdump -h ./exec` to locate the GOT sections. `objdump -s -j .got ./exec` dumps the current file contents of `.got`; it is useful after locating the section but does not enumerate symbolic relocations. Use `readelf -rW ./exec` or `objdump -R ./exec` for those.
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - Response-tamper (success:false→true) → skip 2FA

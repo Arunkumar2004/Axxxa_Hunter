@@ -11,6 +11,12 @@ Usage:
     python3 intel_engine.py --target target.com --tech "nextjs" --memory-dir ~/.claude/projects/proj/hunt-memory
 """
 
+import sys as _sys
+for _s in (_sys.stdout, _sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 import argparse
 import json
 import os

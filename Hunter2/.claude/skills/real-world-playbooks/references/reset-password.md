@@ -1,7 +1,7 @@
 # Real-World Playbook — Password Reset Flaws
 
 **Class:** `reset-password` · **Coverage-matrix tier:** 1 · **Hunter2:** /auth-hunt · **Skill:** auth-attacks
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Test flow / checklist — do these in order
 *(imported from Az0x7/vulnerability-Checklist; run each, mark result in the coverage matrix)*
@@ -115,6 +115,44 @@ works in another domain too.
 [ ] use unicode char jutzu to spoof email address                                                                                                           
 [ ] look for race conditions                                                                                                                               
 [ ] try to register the same mail with different TLD (.eu,.net etc)
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From HowToHunt
+### Password Reset Mindmap
+
+### Source
+* [Twitter](https://twitter.com/N008x/status/1302515523557548032/photo/1)
+* [Blog](https://anugrahsr.github.io/posts/10-Password-reset-flaws/)
+### Authors
+* [KathanP19](https://twitter.com/KathanP19)
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### Reset/Forgotten Password Bypass
+
+
+#### **Password Reset Token Leak Via Referrer**
+
+- The HTTP referer header may leak the password reset token if it's included in the URL. This can occur when a user clicks on a third-party website link after requesting a password reset.
+- **Impact**: Potential account takeover if a third party receives and redeems the leaked reset token.
+- **Exploitation**: To check if a password reset token is leaking in the referer header, **request a password reset** to your email address and **click the reset link** provided. **Do not change your password** immediately. Instead, **navigate to a third-party website** (like Facebook or Twitter) while **intercepting the requests using Burp Suite**. Inspect the requests to see if the **referer header contains the password reset token**, as this could expose sensitive information to third parties.<sup>[[1]](#references)</sup><sup>[[2]](#references)</sup><sup>[[3]](#references)</sup>
+
+#### **Password Reset Poisoning**
+
+- Attackers may manipulate the Host header during password reset requests to point the reset link to a malicious site.
+- **Impact**: Leads to potential account takeover by leaking reset tokens to attackers.<sup>[[4]](#references)</sup>
+- **Exploitation tips**:
+  - Test not only `Host`, but also override headers such as `X-Forwarded-Host`, `Forwarded`, `X-Host`, and `X-Original-Host`. Reverse proxies and middleware sometimes build the reset URL from those values instead of from the canonical host.
+  - If the reset request contains parameters such as `baseurl`, `return_to`, `redirect_uri`, `redirect_url`, `next`, or a tenant/domain selector, point them to an attacker-controlled host and inspect the email template.
+  - Try the poisoning payload on the first request **and** on "resend reset link" endpoints. In several real cases only one of the two paths was vulnerable.
+- **Mitigation Steps**:
+  - Validate the Host header against an allow-list of permitted domains.
+  - Use secure, server-side methods to generate absolute URLs.
+  - **Patch**: Use `$_SERVER['SERVER_NAME']` to construct password reset URLs instead of `$_SERVER['HTTP_HOST']`.
+
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - Host-header poisoning → reset link points to attacker → token theft → ATO

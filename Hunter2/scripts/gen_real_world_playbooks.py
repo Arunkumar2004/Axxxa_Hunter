@@ -21,6 +21,21 @@ RED_BASE = "https://raw.githubusercontent.com/reddelexc/hackerone-reports/master
 AZ_TREE = "https://api.github.com/repos/Az0x7/vulnerability-Checklist/git/trees/main?recursive=1"
 AZ_BASE = "https://raw.githubusercontent.com/Az0x7/vulnerability-Checklist/main/"
 
+# Extra real-knowledge sources (Phase 1 upgrade): real payloads + real attacker methodology.
+# Each maps a class slug -> best-matching file in the repo (via git-trees API + fuzzy match).
+PATT_REPO = "swisskyrepo/PayloadsAllTheThings"   # real payloads + bypasses per class
+HTH_REPO = "KathanP19/HowToHunt"                  # step-by-step hunting methodology per class
+AAB_REPO = "daffainfo/AllAboutBugBounty"          # concise real technique notes per class
+
+# Phase 3 sources
+WSTG_REPO = "OWASP/wstg"                           # authoritative OWASP testing methodology (permissive)
+HACKTRICKS_REPO = "HackTricks-wiki/hacktricks"     # deep per-topic methodology (NC license -> short excerpt + link only)
+RED_TREE = "https://api.github.com/repos/reddelexc/hackerone-reports/git/trees/master?recursive=1"
+# payloadbox: one curated repo per class (each is a big real payload list). Detection only.
+# payloadbox dropped: its tree API is flaky (404/rate-limit) and its payloads are
+# already covered by PayloadsAllTheThings. Left as a dict so it's trivial to re-enable.
+PAYLOADBOX: dict[str, str] = {}
+
 # slug -> metadata (curated). red = reddelexc TOP stem; az = Az0x7 file basenames (path.replace('/','__').replace(' ','_'))
 CLASSES = {
  "idor-bola": dict(title="IDOR / BOLA (Broken Object-Level Auth)", tier=0,
@@ -220,9 +235,251 @@ CLASSES = {
            "Most programs treat volumetric DoS as out-of-scope; report logic-DoS carefully"]),
 }
 
+# slug -> keyword aliases used to fuzzy-match the right file/folder in each extra repo.
+ALIASES = {
+ "idor-bola": ["insecure direct object", "idor", "broken object level", "bola"],
+ "account-takeover": ["account takeover", "ato"],
+ "ssrf": ["server side request forgery", "ssrf"],
+ "xss": ["xss", "cross site scripting"],
+ "business-logic": ["business logic"],
+ "auth-session": ["broken authentication", "authentication", "session"],
+ "api-auth": ["api key", "mass assignment", "authorization", "graphql"],
+ "jwt": ["jwt", "json web token"],
+ "oauth": ["oauth"],
+ "openid": ["openid", "oidc", "saml"],
+ "mfa-2fa": ["2fa", "mfa", "two factor", "otp"],
+ "reset-password": ["reset password", "password reset", "forgot password"],
+ "csrf": ["csrf", "cross site request forgery"],
+ "cors": ["cors"],
+ "sqli": ["sql injection", "sqli"],
+ "nosqli": ["nosql injection", "nosql"],
+ "ssti": ["server side template injection", "ssti", "template injection"],
+ "rce": ["remote code execution", "rce", "code execution", "insecure deserialization"],
+ "command-injection": ["command injection", "os command", "command execution"],
+ "file-upload": ["file upload", "upload insecure files", "upload"],
+ "path-traversal-lfi": ["directory traversal", "path traversal", "file inclusion", "lfi"],
+ "xxe": ["xxe", "xml external entity"],
+ "open-redirect": ["open redirect", "open url redirection", "open url redirect"],
+ "graphql": ["graphql"],
+ "prototype-pollution": ["prototype pollution"],
+ "websocket-cswsh": ["websocket", "cross site websocket"],
+ "hpp": ["http parameter pollution", "parameter pollution"],
+ "clickjacking": ["clickjacking", "ui redress"],
+ "crlf-hostheader": ["crlf", "host header", "http response splitting"],
+ "request-smuggling": ["request smuggling", "http smuggling"],
+ "web-cache": ["web cache deception", "cache poisoning", "web cache"],
+ "deserialization": ["insecure deserialization", "deserialization"],
+ "race-condition": ["race condition"],
+ "subdomain-takeover": ["subdomain takeover", "domain takeover"],
+ "info-disclosure": ["information disclosure", "sensitive data", "exif"],
+ "cookie": ["cookie"],
+ "403-bypass": ["403", "forbidden bypass", "access control"],
+ "registration": ["registration", "sign up", "signup", "register"],
+ "admin-panel": ["admin panel", "admin"],
+ "framework": ["django", "symfony", "laravel", "spring", "rails"],
+ "mobile": ["mobile", "android", "ios"],
+ "dos": ["denial of service", "dos"],
+}
+
 def fetch(url, timeout=45):
     req = urllib.request.Request(url, headers={"User-Agent": "hunter2-playbook-gen"})
     return urllib.request.urlopen(req, timeout=timeout).read().decode("utf-8", "replace")
+
+def _norm(s):
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
+def fetch_tree_any(repo):
+    """Return (blob_paths, branch) for a repo, trying master then main."""
+    for br in ("master", "main"):
+        try:
+            data = json.loads(fetch(f"https://api.github.com/repos/{repo}/git/trees/{br}?recursive=1"))
+            paths = [t["path"] for t in data.get("tree", []) if t.get("type") == "blob"]
+            if paths:
+                return paths, br
+        except Exception as e:
+            print(f"  WARN tree {repo}@{br}: {e}")
+    return [], "master"
+
+def _pick(paths, aliases, mode):
+    """Pick the best path: mode 'folder_readme' -> '<Folder>/README.md'; 'root_md' -> '<File>.md'."""
+    best, best_score = None, 0
+    for p in paths:
+        low = p.lower()
+        if mode == "folder_readme":
+            m = re.match(r"^([^/]+)/readme\.md$", low)
+            if not m:
+                continue
+            name = p.split("/")[0]
+        else:  # root_md
+            if not re.match(r"^[^/]+\.md$", low):
+                continue
+            name = p[:-3]
+        n = _norm(name)
+        for a in aliases:
+            na = _norm(a)
+            if not na:
+                continue
+            score = 100 if na == n else (len(na) if (na in n or n in na) else 0)
+            if score > best_score:
+                best, best_score = p, score
+    return best
+
+def gather(repo, mode):
+    """slug -> raw markdown for the best-matching file in `repo`."""
+    paths, br = fetch_tree_any(repo)
+    if not paths:
+        return {}
+    raw = f"https://raw.githubusercontent.com/{repo}/{br}/"
+    out = {}
+    for slug, aliases in ALIASES.items():
+        p = _pick(paths, aliases, mode)
+        if not p:
+            continue
+        try:
+            out[slug] = fetch(raw + urllib.parse.quote(p))
+        except Exception as e:
+            print(f"  WARN {repo} {slug}: {e}")
+    return out
+
+def fetch_tree_sized(repo):
+    """Return ([(path, size)], branch) trying master then main."""
+    for br in ("master", "main"):
+        try:
+            data = json.loads(fetch(f"https://api.github.com/repos/{repo}/git/trees/{br}?recursive=1"))
+            items = [(t["path"], t.get("size", 0)) for t in data.get("tree", []) if t.get("type") == "blob"]
+            if items:
+                return items, br
+        except Exception as e:
+            print(f"  WARN tree {repo}@{br}: {e}")
+    return [], "master"
+
+def _pick_deep(paths, aliases):
+    """Pick the best .md at ANY depth. Name = filename (or parent folder if README)."""
+    best, best_score = None, 0
+    for p in paths:
+        low = p.lower()
+        if not low.endswith(".md"):
+            continue
+        parts = p.split("/")
+        fname = parts[-1][:-3]
+        name = parts[-2] if (fname.lower() == "readme" and len(parts) >= 2) else fname
+        n = _norm(name)
+        for a in aliases:
+            na = _norm(a)
+            if not na:
+                continue
+            score = 100 if na == n else (len(na) if (na in n or n in na) else 0)
+            if score > best_score:
+                best, best_score = p, score
+    return best
+
+def gather_deep(repo):
+    """slug -> raw markdown for the best-matching .md at any depth (WSTG / HackTricks)."""
+    paths, br = fetch_tree_any(repo)
+    if not paths:
+        return {}
+    raw = f"https://raw.githubusercontent.com/{repo}/{br}/"
+    out = {}
+    for slug, aliases in ALIASES.items():
+        p = _pick_deep(paths, aliases)
+        if not p:
+            continue
+        try:
+            out[slug] = fetch(raw + urllib.parse.quote(p))
+        except Exception as e:
+            print(f"  WARN {repo} {slug}: {e}")
+    return out
+
+def gather_payloadbox():
+    """slug -> payload lines, picking the largest .txt in each curated payloadbox repo."""
+    out = {}
+    for slug, repo in PAYLOADBOX.items():
+        items, br = fetch_tree_sized(repo)
+        txts = [(p, s) for p, s in items if p.lower().endswith(".txt")]
+        if not txts:
+            continue
+        txts.sort(key=lambda x: x[1], reverse=True)  # largest list first
+        path = txts[0][0]
+        raw = f"https://raw.githubusercontent.com/{repo}/{br}/"
+        try:
+            body = fetch(raw + urllib.parse.quote(path))
+            lines = [l.strip() for l in body.splitlines() if l.strip() and not l.strip().startswith("#")]
+            if lines:
+                out[slug] = (repo, path, lines[:40])  # cap 40 real payloads per class
+        except Exception as e:
+            print(f"  WARN payloadbox {slug}: {e}")
+    return out
+
+def redfill(red_data):
+    """Map classes with no reddelexc reports to an available TOP*.md via alias match."""
+    try:
+        data = json.loads(fetch(RED_TREE))
+    except Exception as e:
+        print(f"  WARN reddelexc tree: {e}")
+        return
+    stems = {}
+    for t in data.get("tree", []):
+        p = t.get("path", "")
+        if p.startswith("docs/tops_by_bug_type/TOP") and p.endswith(".md"):
+            stem = p.split("/")[-1][:-3]  # e.g. TOPJWT
+            stems[_norm(stem[3:])] = stem  # normalized name without 'TOP'
+    for slug, m in CLASSES.items():
+        cur = m.get("red")
+        if cur and red_data.get(cur):  # already has reports
+            continue
+        # alias-match to an available TOP stem
+        best, best_score, best_stem = None, 0, None
+        for a in ALIASES.get(slug, []):
+            na = _norm(a)
+            for key, stem in stems.items():
+                score = 100 if na == key else (len(na) if (na in key or key in na) else 0)
+                if score > best_score:
+                    best_score, best_stem = score, stem
+        if best_stem and best_stem not in red_data:
+            try:
+                red_data[best_stem] = fetch(RED_BASE + best_stem + ".md")
+                m["red"] = best_stem
+                print(f"  redfill {slug} -> {best_stem}")
+            except Exception as e:
+                print(f"  WARN redfill {slug}: {e}")
+        elif best_stem:
+            m["red"] = best_stem
+
+def code_blocks(md, cap=60):
+    """Extract fenced code blocks (the real payloads) from a README, capped."""
+    out, infence, count = [], False, 0
+    for line in (md or "").splitlines():
+        if line.strip().startswith("```"):
+            if infence:
+                out.append("```"); infence = False
+            else:
+                infence = True; out.append("```")
+            continue
+        if infence:
+            out.append(line); count += 1
+            if count >= cap:
+                out.append("```"); break
+    return "\n".join(out).strip()
+
+def trim_md(md, cap=70):
+    """Trim methodology markdown: drop images/badges/HTML, cap length."""
+    lines = []
+    for line in (md or "").splitlines():
+        s = line.strip()
+        if s.startswith("![") or s.startswith("<img") or s.startswith("<p") or s.startswith("<div"):
+            continue
+        if s.startswith("{{") or s.startswith("{%"):  # mdbook/hacktricks include & template directives
+            continue
+        # demote imported headings 2 levels so they nest under our ### subsection
+        hm = re.match(r"^(#{1,6})\s+(.*)$", s)
+        if hm:
+            level = min(len(hm.group(1)) + 2, 6)
+            line = "#" * level + " " + hm.group(2)
+        lines.append(line)
+        if len(lines) >= cap:
+            lines.append("\n*(truncated — open the source link for the full method)*")
+            break
+    return "\n".join(lines).strip()
 
 def fetch_reddelexc():
     out = {}
@@ -260,16 +517,27 @@ def parse_reddelexc(text, topn=18):
     rows.sort(key=lambda r: (r[4], r[3]), reverse=True)
     return rows[:topn]
 
-def build(red_data, az_data):
+def build(red_data, az_data, patt_data, hth_data, aab_data, pb_data, wstg_data, ht_data):
     OUT.mkdir(parents=True, exist_ok=True)
     written = []
     for slug, m in CLASSES.items():
         red = parse_reddelexc(red_data.get(m.get("red"), ""), 18)
         az_body = "\n\n".join(az_data.get(p, "").strip() for p in (m.get("az") or []) if az_data.get(p, "").strip())
+        patt_body = code_blocks(patt_data.get(slug, ""))
+        hth_body = trim_md(hth_data.get(slug, ""))
+        aab_body = trim_md(aab_data.get(slug, ""))
+        pb = pb_data.get(slug)  # (repo, path, [lines]) or None
+        wstg_body = trim_md(wstg_data.get(slug, ""), cap=60)
+        ht_body = trim_md(ht_data.get(slug, ""), cap=22)  # HackTricks: short excerpt only (NC license)
         out = [f"# Real-World Playbook — {m['title']}\n",
                f"**Class:** `{slug}` · **Coverage-matrix tier:** {m['tier']} · **Hunter2:** {m['tool']} · **Skill:** {m['skill']}",
                "**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) "
-               "(disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)\n"]
+               "(disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · "
+               "[PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + "
+               "[payloadbox](https://github.com/payloadbox) (payloads) · "
+               "[OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + "
+               "[AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + "
+               "[HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)\n"]
         if red:
             maxb = max(r[4] for r in red)
             progs = ", ".join(sorted({r[2] for r in red})[:8])
@@ -285,6 +553,27 @@ def build(red_data, az_data):
             out.append("## Test flow / checklist — do these in order")
             out.append("*(imported from Az0x7/vulnerability-Checklist; run each, mark result in the coverage matrix)*\n")
             out.append(az_body); out.append("")
+        if patt_body or pb:
+            out.append("## Real payloads")
+            out.append("*(actual attack strings — adapt to the injection context; fire only where a real sink exists)*\n")
+            if patt_body:
+                out.append("### PayloadsAllTheThings"); out.append(patt_body); out.append("")
+            if pb:
+                repo, path, lines = pb
+                out.append(f"### payloadbox ([{repo}](https://github.com/{repo}))")
+                out.append("```"); out += lines; out.append("```"); out.append("")
+        if hth_body or aab_body or wstg_body or ht_body:
+            out.append("## Real attacker flow / methodology")
+            out.append("*(how real hunters approach this class step by step)*\n")
+            if wstg_body:
+                out.append("### From OWASP WSTG (testing guide)"); out.append(wstg_body); out.append("")
+            if hth_body:
+                out.append("### From HowToHunt"); out.append(hth_body); out.append("")
+            if aab_body:
+                out.append("### From AllAboutBugBounty"); out.append(aab_body); out.append("")
+            if ht_body:
+                out.append("### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)")
+                out.append(ht_body); out.append("")
         out.append("## Chaining — always ask \"what does this unlock?\"")
         out += [f"- {c}" for c in m["chain"]]
         out.append("")
@@ -293,17 +582,29 @@ def build(red_data, az_data):
         out.append(f"- **Skill:** `{m['skill']}`")
         out.append(f"- **Coverage-matrix tier:** {m['tier']} (Tier 0 = test first)\n")
         (OUT / f"{slug}.md").write_text("\n".join(out), encoding="utf-8")
-        written.append((slug, len(red), bool(az_body)))
+        written.append((slug, len(red), bool(az_body),
+                        bool(patt_body or pb), bool(hth_body or aab_body or wstg_body or ht_body)))
     return written
 
 def main():
     print("Fetching reddelexc/hackerone-reports + Az0x7/vulnerability-Checklist ...")
     red_data = fetch_reddelexc()
     az_data = fetch_az()
-    written = build(red_data, az_data)
+    print("Filling report gaps from reddelexc TOP index ...")
+    redfill(red_data)
+    print("Fetching PayloadsAllTheThings + payloadbox (payloads) ...")
+    patt_data = gather(PATT_REPO, "folder_readme")
+    pb_data = gather_payloadbox()
+    print("Fetching OWASP WSTG + HowToHunt + AllAboutBugBounty + HackTricks (methodology) ...")
+    wstg_data = gather_deep(WSTG_REPO)
+    hth_data = gather(HTH_REPO, "folder_readme")
+    aab_data = gather(AAB_REPO, "root_md")
+    ht_data = gather_deep(HACKTRICKS_REPO)
+    written = build(red_data, az_data, patt_data, hth_data, aab_data, pb_data, wstg_data, ht_data)
     print(f"Wrote {len(written)} playbooks to {OUT.relative_to(ROOT)}")
-    for slug, nred, haz in written:
-        print(f"  {slug:22s} reports={nred:2d} checklist={'Y' if haz else '-'}")
+    for slug, nred, haz, hpatt, hmeth in written:
+        print(f"  {slug:22s} reports={nred:2d} checklist={'Y' if haz else '-'} "
+              f"payloads={'Y' if hpatt else '-'} method={'Y' if hmeth else '-'}")
     print("\nReminder: also copy to .claude/skills/ for Claude Code parity:")
     print("  cp -r skills/real-world-playbooks .claude/skills/real-world-playbooks")
 

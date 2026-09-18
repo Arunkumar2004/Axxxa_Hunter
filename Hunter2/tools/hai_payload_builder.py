@@ -22,6 +22,12 @@ Usage — LLM injection:
   python3 hai_payload_builder.py --attack all --output-dir payloads/
 """
 
+import sys as _sys
+for _s in (_sys.stdout, _sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 import argparse
 import os
 import sys

@@ -332,6 +332,37 @@ Methodology playbooks the agents apply automatically.
 - **Mobile:** `mobile-pentest`
 - **Cloud / Infra:** `cloud-security` · `kubernetes-security` · `credential-attack` · `active-directory` (authorized internal only)
 
+### Real-World Knowledge (5 sources + payload corpus)
+
+The `real-world-playbooks` skill is the agent's real-hacker knowledge base — **44 per-class
+files** in `skills/real-world-playbooks/references/<class>.md`, each carrying the full
+attacker flow for that bug: real reports → checklist → real payloads → real methodology →
+chaining. It is distilled live over HTTPS from **five public sources**:
+
+| Source | What it contributes |
+|--------|---------------------|
+| [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) | top **disclosed HackerOne reports** per class (technique + bounty + link) |
+| [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) | ordered **test-flow checklist** per class |
+| [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) | **real payloads + filter bypasses** per class |
+| [OWASP WSTG](https://github.com/OWASP/wstg) | authoritative **testing methodology** per class |
+| [KathanP19/HowToHunt](https://github.com/KathanP19/HowToHunt) | step-by-step **hunting methodology** per class |
+| [daffainfo/AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) | concise **real technique notes** per class |
+| [HackTricks](https://github.com/HackTricks-wiki/hacktricks) | short **methodology excerpt + link** per class (non-commercial: excerpt only) |
+
+Coverage after this pass: **methodology on 42/44 classes, real payloads on 28/44** (a class with no match simply omits that section).
+
+Refresh any time new reports land (self-contained, mirrors for both CLIs):
+
+```bash
+python scripts/gen_real_world_playbooks.py
+cp -r skills/real-world-playbooks .claude/skills/real-world-playbooks   # Claude Code parity
+```
+
+**Scanner payload corpus:** the active scanners also fire real payloads from
+`tools/payloads/*.txt` via `tools/payload_loader.py` (currently `nosqli`, `crlf`, `xxe`),
+keeping their built-ins as a fallback so detection never regresses. Add a `<class>.txt`
+there to extend a scanner's payloads without touching code.
+
 ---
 
 ## 8. Key Tools

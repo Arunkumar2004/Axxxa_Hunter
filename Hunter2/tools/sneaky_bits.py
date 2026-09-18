@@ -13,6 +13,12 @@ Usage:
   python3 sneaky_bits.py variant-encode "Hidden payload"  # Variant Selector encoding
 """
 
+import sys as _sys
+for _s in (_sys.stdout, _sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 import argparse
 import sys
 import json

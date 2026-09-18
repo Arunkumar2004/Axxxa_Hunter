@@ -1,7 +1,7 @@
 # Real-World Playbook — 403 / 401 Access-Control Bypass
 
 **Class:** `403-bypass` · **Coverage-matrix tier:** 1 · **Hunter2:** /bypass-403 · **Skill:** web2-vuln-classes
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Test flow / checklist — do these in order
 *(imported from Az0x7/vulnerability-Checklist; run each, mark result in the coverage matrix)*
@@ -354,6 +354,35 @@ X-True-IP: 127.0.0.1
 %2f%2f%2f
 %2f//
 ```
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### macOS MACF
+
+
+#### Basic Information
+
+**MACF** stands for **Mandatory Access Control Framework**, which is a security system built into the operating system to help protect your computer. It works by setting **strict rules about who or what can access certain parts of the system**, such as files, applications, and system resources. By enforcing these rules automatically, MACF ensures that only authorized users and processes can perform specific actions, reducing the risk of unauthorized access or malicious activities.
+
+Note that MACF doesn't really make any decisions as it just **intercepts** actions, it leaves the decisions to the **policy modules** (kernel extensions) it calls like `AppleMobileFileIntegrity.kext`, `Quarantine.kext`, `Sandbox.kext`, `TMSafetyNet.kext` and `mcxalr.kext`.
+
+- A policy may be enforcing (return 0 non-zero on some operation)
+- A policy may be monitoring (return 0, so as not to object but piggyback on hook to do something)
+- A MACF static policy is installed in boot and will NEVER be removed
+- A MACF dynamic policy is installed by a KEXT (kextload) and may hypothetically be kextunloaded
+- In iOS only static policies are allowed and in macOS static + dynamic.<sup>[[7]](#references)</sup>
+
+##### Flow
+
+1. Process performs a syscall/mach trap
+2. The relevant function is called inside the kernel
+3. Function calls MACF
+4. MACF checks policy modules that requested to hook that function in their policy
+5. MACF calls the relevant policies
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - Path/method/header trick reaches a forbidden admin endpoint → BFLA

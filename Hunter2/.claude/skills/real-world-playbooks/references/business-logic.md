@@ -1,7 +1,7 @@
 # Real-World Playbook — Business Logic Abuse
 
 **Class:** `business-logic` · **Coverage-matrix tier:** 0 · **Hunter2:** business-logic-hunter agent · tools/h1_race.py · **Skill:** race-conditions
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Why it pays (real bounty signal)
 Top disclosed Business Logic Abuse reports peak at **$12,000**. Rewarded across: Cloudflare Public Bug Bounty, Eternal, GitHub Security Lab, GitLab, HackerOne, Internet Bug Bounty, Lob, New Relic.
@@ -10,20 +10,20 @@ Top disclosed Business Logic Abuse reports peak at **$12,000**. Rewarded across:
 *(title = the actual technique; open the report for the full PoC)*
 
 - **Project Template functionality can be used to copy private project data, such as repository, confidential issues, snippets, and merge requests** — GitLab, $12,000 · 457👍 · [689314](https://hackerone.com/reports/689314)
-- **HTTP Request Smuggling in Transform Rules using hexadecimal escape sequences in the concat() function** — Cloudflare Public Bug Bounty, $6,000 · 115👍 · [1478633](https://hackerone.com/reports/1478633)
+- **HTTP Request Smuggling in Transform Rules using hexadecimal escape sequences in the concat() function** — Cloudflare Public Bug Bounty, $6,000 · 116👍 · [1478633](https://hackerone.com/reports/1478633)
 - **SSRF in Functional Administrative Support Tool pdf generator (████) [HtUS]** — U.S. Dept Of Defense, $4,000 · 46👍 · [1628209](https://hackerone.com/reports/1628209)
 - **Time-of-check to time-of-use vulnerability in the std::fs::remove_dir_all() function of the Rust standard library** — Internet Bug Bounty, $4,000 · 9👍 · [1520931](https://hackerone.com/reports/1520931)
-- **Claiming the listing of a non-delivery restaurant through OTP manipulation** — Eternal, $3,250 · 107👍 · [1330529](https://hackerone.com/reports/1330529)
+- **Claiming the listing of a non-delivery restaurant through OTP manipulation** — Eternal, $3,250 · 108👍 · [1330529](https://hackerone.com/reports/1330529)
 - **GoldSrc: Buffer Overflow in DELTA_ParseDelta function leads to RCE** — Valve, $3,000 · 26👍 · [484745](https://hackerone.com/reports/484745)
-- **Server Side Request Forgery (SSRF) in webhook functionality** — HackerOne, $2,500 · 134👍 · [2301565](https://hackerone.com/reports/2301565)
+- **Server Side Request Forgery (SSRF) in webhook functionality** — HackerOne, $2,500 · 137👍 · [2301565](https://hackerone.com/reports/2301565)
 - **Account Takeover via Email ID Change and Forgot Password Functionality** — New Relic, $2,048 · 214👍 · [1089467](https://hackerone.com/reports/1089467)
 - **ihsinme: CPP Add query for CWE-783 Operator Precedence Logic Error When Use Bool Type** — GitHub Security Lab, $1,800 · 5👍 · [1241578](https://hackerone.com/reports/1241578)
 - **ihsinme: CPP Add query for CWE-401 memory leak on unsuccessful call to realloc function** — GitHub Security Lab, $1,800 · 2👍 · [1093242](https://hackerone.com/reports/1093242)
 - **Null pointer dereference in SMTP server function smtp_string_parse** — Open-Xchange, $1,500 · 105👍 · [827729](https://hackerone.com/reports/827729)
 - **Old WebKit HTML agent in Template Preview function has multiple known vulnerabilities leading to RCE** — Lob, $1,500 · 68👍 · [520717](https://hackerone.com/reports/520717)
 - **[stored xss, pornhub.com] stream post function** — Pornhub, $1,500 · 35👍 · [138075](https://hackerone.com/reports/138075)
-- **Exploitable live argument in onClick Function leads to Data Leakage of Inactive/Suspended Products** — TikTok, $1,000 · 126👍 · [2295958](https://hackerone.com/reports/2295958)
-- **Authorization Token on PlayStation Network Leaks via postMessage function** — PlayStation, $1,000 · 73👍 · [826394](https://hackerone.com/reports/826394)
+- **Exploitable live argument in onClick Function leads to Data Leakage of Inactive/Suspended Products** — TikTok, $1,000 · 128👍 · [2295958](https://hackerone.com/reports/2295958)
+- **Authorization Token on PlayStation Network Leaks via postMessage function** — PlayStation, $1,000 · 74👍 · [826394](https://hackerone.com/reports/826394)
 - **Unrestricted access to quiesce functionality in dss.api.playstation.com REST API leads to unavailability of application** — PlayStation, $1,000 · 49👍 · [993722](https://hackerone.com/reports/993722)
 - **SSRF in VCARD photo upload functionality** — Open-Xchange, $850 · 49👍 · [296045](https://hackerone.com/reports/296045)
 - **[CVE-2020-27194] Linux kernel: eBPF verifier bug in `or` binary operation tracking function leads to LPE** — Internet Bug Bounty, $750 · 11👍 · [1010340](https://hackerone.com/reports/1010340)
@@ -233,6 +233,73 @@ from URLs or by using some internal  parameters.
 
 26. null pyloads
 27. in change password try to delete current password
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From OWASP WSTG (testing guide)
+### Introduction to Business Logic
+
+Identifying business logic flaws in a multi-functional dynamic web application requires thinking in unconventional methods. If an application's authentication mechanism is developed with the intention of performing steps 1, 2, 3 in that specific order to authenticate a user. What happens if the user goes from step 1 straight to step 3? In this simplistic example, does the application provide access by failing open; deny access, or just error out with a 500 message?
+
+There are many examples that can be made, but the one constant lesson is "think outside of conventional wisdom". This type of vulnerability cannot be detected by a vulnerability scanner and relies upon the skills and creativity of the penetration tester. In addition, this type of vulnerability is usually one of the hardest to detect, and usually application specific but, at the same time, usually one of the most detrimental to the application, if exploited.
+
+The classification of business logic flaws has been under-studied; although exploitation of business flaws frequently happens in real-world systems, and many applied vulnerability researchers investigate them. The greatest focus is in web applications. There is debate within the community about whether these problems represent particularly new concepts, or if they are variations of well-known principles.
+
+Testing of business logic flaws is similar to the test types used by functional testers that focus on logical or finite state testing. These types of tests require that security professionals think a bit differently, develop abuse and misuse cases and use many of the testing techniques embraced by functional testers. Automation of business logic abuse cases is not possible and remains a manual art relying on the skills of the tester and their knowledge of the complete business process and its rules.
+
+#### Business Limits and Restrictions
+
+Consider the rules for the business function being provided by the application. Are there any limits or restrictions on people's behavior? Then consider whether the application enforces those rules. It's generally pretty easy to identify the test and analysis cases to verify the application if you're familiar with the business. If you are a third-party tester, then you're going to have to use your common sense or ask the business if different operations should be allowed by the application.
+
+Sometimes, in very complex applications, the tester will not have a full understanding of every aspect of the application initially. In these situations, it is best to have the client walk the tester through the application, so that they may gain a better understanding of the limits and intended functionality of the application before the actual test begins. Additionally, having a direct line to the developers (if possible) during testing will help out greatly, if any questions arise regarding the application's functionality.
+
+#### Challenges of Logic Testing
+
+Automated tools find it hard to understand context, hence it's up to a person to perform these kinds of tests. The following two examples will illustrate how understanding the functionality of the application, the developer's intentions, and some creative "out-of-the-box" thinking can break the application's logic. The first example starts with a simplistic parameter manipulation, whereas the second is a real world example of a multi-step process leading to completely subverting the application.
+
+**Example 1**:
+
+Suppose an e-commerce site allows users to select items to purchase, view a summary page and then tender the sale. What if an attacker was able to go back to the summary page, maintaining their same valid session and inject a lower cost for an item and complete the transaction, and then check out?
+
+**Example 2**:
+
+Holding/locking resources and keeping others from purchasing these items online may result in attackers purchasing items at a lower price. The countermeasure to this problem is to implement timeouts and mechanisms to ensure that only the correct price can be charged.
+
+**Example 3**:
+
+What if a user was able to start a transaction linked to their club/loyalty account and then after points have been added to their account cancel out of the transaction? Will the points/credits still be applied to their account?
+
+#### Tools
+
+While there are tools for testing and verifying that business processes are functioning correctly in valid situations these tools are incapable of detecting logical vulnerabilities. For example, tools have no means of detecting if a user is able to circumvent the business process flow through editing parameters, predicting resource names or escalating privileges to access restricted resources nor do they have any mechanism to help the human testers to suspect this state of affairs.
+
+The following are some common tool types that can be useful in identifying business logic issues.
+
+When installing addons you should always be diligent in considering the permissions they request and your browser usage habits.
+
+##### Intercepting Proxy
+
+To Observe the Request and Response Blocks of HTTP Traffic
+
+- [Zed Attack Proxy (ZAP)](https://www.zaproxy.org)
+- [Burp Proxy](https://portswigger.net/burp)
+
+##### Browser Developer Tools
+
+To View and Modify HTTP/HTTPS Headers, Post Parameters, and Observe the DOM of the Browser
+
+- Built-in browser developer tools (Network, Application/Storage, and Elements panels)
+
+#### Miscellaneous Test Tools
+
+- [Web Developer toolbar](https://chrome.google.com/webstore/detail/bfbameneiokkgbdmiekhjnmfkcnldhhm)
+    - The Web Developer extension adds a toolbar button to the browser with various web developer tools. This is the official port of the Web Developer extension for Firefox.
+- [HTTP Request Maker for Chrome](https://chrome.google.com/webstore/detail/kajfghlhfkcocafkcjlajldicbikpgnp)
+- [HTTP Request Maker for Firefox](https://addons.mozilla.org/en-US/firefox/addon/http-request-maker)
+    - Request Maker is a tool for penetration testing. With it you can easily capture requests made by web pages, tamper with the URL, headers and POST data and, of course, make new requests
+
+*(truncated — open the source link for the full method)*
 
 ## Chaining — always ask "what does this unlock?"
 - Price/quantity/currency tamper → buy for free / negative totals

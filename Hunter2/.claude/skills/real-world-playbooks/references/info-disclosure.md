@@ -1,7 +1,7 @@
 # Real-World Playbook — Information Disclosure
 
 **Class:** `info-disclosure` · **Coverage-matrix tier:** 1 · **Hunter2:** recon · vuln_scanner.sh · tools/secrets_hunter.sh · tools/sourcemap_extract.py · **Skill:** web2-recon
-**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow)
+**Sources:** [reddelexc/hackerone-reports](https://github.com/reddelexc/hackerone-reports) (disclosed reports) · [Az0x7/vulnerability-Checklist](https://github.com/Az0x7/vulnerability-Checklist) (test flow) · [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings) + [payloadbox](https://github.com/payloadbox) (payloads) · [OWASP WSTG](https://github.com/OWASP/wstg) + [HowToHunt](https://github.com/KathanP19/HowToHunt) + [AllAboutBugBounty](https://github.com/daffainfo/AllAboutBugBounty) + [HackTricks](https://github.com/HackTricks-wiki/hacktricks) (method)
 
 ## Why it pays (real bounty signal)
 Top disclosed Information Disclosure reports peak at **$10,000**. Rewarded across: Eternal, GitLab, HackerOne, Internet Bug Bounty, Mail.ru, New Relic, Postmates, Razer.
@@ -12,7 +12,7 @@ Top disclosed Information Disclosure reports peak at **$10,000**. Rewarded acros
 - **Information Disclosure in /skills call** — HackerOne, $10,000 · 285👍 · [188719](https://hackerone.com/reports/188719)
 - **CVE-2025-24813: Remote Code Execution and/or Information disclosure and/or malicious content added to uploaded files via write enabled Default Servlet** — Internet Bug Bounty, $4,323 · 56👍 · [3031518](https://hackerone.com/reports/3031518)
 - **information disclosure of secret_key_base via encoding charcters** — GitLab, $3,500 · 146👍 · [460545](https://hackerone.com/reports/460545)
-- **[Information Disclosure] Amazon S3 Bucket of Shopify Ping (iOS) have public access of other users image** — Shopify, $2,900 · 134👍 · [1021906](https://hackerone.com/reports/1021906)
+- **[Information Disclosure] Amazon S3 Bucket of Shopify Ping (iOS) have public access of other users image** — Shopify, $2,900 · 135👍 · [1021906](https://hackerone.com/reports/1021906)
 - **Possible PII Disclosure via Advanced Vetting Process - ██████** — HackerOne, $2,500 · 82👍 · [2421796](https://hackerone.com/reports/2421796)
 - **Flash Player information disclosure (etc.) CVE-2015-3044, PSIRT-3298** — Internet Bug Bounty, $2,000 · 8👍 · [63324](https://hackerone.com/reports/63324)
 - **Security bypass could lead to information disclosure** — Internet Bug Bounty, $2,000 · 3👍 · [7803](https://hackerone.com/reports/7803)
@@ -47,6 +47,24 @@ When a user uploads an image in example.com, the uploaded image’s EXIF Geoloca
 # Reports (Hackerone)
 
 - [IDOR with Geolocation data not stripped from images](https://hackerone.com/reports/906907)
+
+## Real attacker flow / methodology
+*(how real hunters approach this class step by step)*
+
+### From HackTricks (excerpt — see [HackTricks](https://github.com/HackTricks-wiki/hacktricks) for full)
+### Stealing Sensitive Information from a Web Page
+
+
+If a **web page displays sensitive information based on the current session**—such as cookies, account data, or credit card details—an attacker may try to exfiltrate it. The main techniques include:
+
+- [**CORS bypass**](../pentesting-web/cors-bypass.md): A CORS misconfiguration may allow a malicious origin to read sensitive responses through cross-origin requests.
+- [**XSS**](../pentesting-web/xss-cross-site-scripting/index.html): An XSS vulnerability in the target origin may allow injected JavaScript to read and exfiltrate the information.
+- [**Dangling markup**](../pentesting-web/dangling-markup-html-scriptless-injection/index.html): When script injection is unavailable, injected HTML elements may still capture sensitive content.
+- [**Clickjacking**](../pentesting-web/clickjacking.md): If framing protections are absent, an attacker may trick a user into interacting with the sensitive page. The linked case study demonstrates this technique.<sup>[[1]](#references)</sup>
+
+#### References
+
+- [1] [Apache example servlet leads to Information Disclosure](https://medium.com/bugbountywriteup/apache-example-servlet-leads-to-61a2720cac20)
 
 ## Chaining — always ask "what does this unlock?"
 - Leaked userID/email → targeted IDOR/BOLA
