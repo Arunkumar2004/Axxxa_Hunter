@@ -29,6 +29,10 @@ if _REPO not in sys.path:
     sys.path.insert(0, _REPO)
 from tools.banner import print_banner  # noqa: E402
 from tools.safe_http import safe_urlopen  # noqa: E402
+try:
+    from tools.rejection_gate import check_finding as _rejection_check  # noqa: E402
+except Exception:  # noqa: BLE001
+    _rejection_check = None
 
 # Prefer certifi's CA bundle when available (macOS Python may lack system
 # SSL certs); otherwise fall back to the system CA store via
@@ -873,6 +877,25 @@ def main():
     vuln_type      = ask("Vulnerability type (e.g., 'IDOR', 'Stored XSS', 'SSRF')")
     endpoint       = ask("Affected endpoint (e.g., '/api/invoices/:id')")
     scanner_summary = load_json_file(args.scanner_summary)
+
+    # Auto rejection-gate pre-check: kill known-invalid findings (public keys,
+    # self-XSS, missing headers, theoretical) BEFORE spending time on the 4 gates.
+    if _rejection_check is not None:
+        desc = ask("One-line description of the finding (for the auto rejection-gate)", "")
+        pre = _rejection_check({
+            "vuln_type": vuln_type,
+            "description": desc,
+            "endpoint": endpoint,
+        })
+        if pre.get("verdict") == "REJECTED":
+            print(f"\n  {RED}{BOLD}AUTO-REJECTED by the rejection gate.{RESET}")
+            for r in pre.get("reasons", []):
+                print(f"    {RED}- {r}{RESET}")
+            print(f"  {DIM}This is on the always-rejected list. Do not waste a report on it.{RESET}")
+            if not ask_yn("Override and continue anyway?", default=False):
+                sys.exit(0)
+        elif pre.get("verdict") == "NEEDS_CHAIN":
+            print(f"\n  {YELLOW}Rejection gate: valid only WITH a chain — {', '.join(pre.get('chain_savers', []))}{RESET}")
 
     # Run the 4 gates
     g1_pass, g1_notes = gate1_is_real(vuln_type)

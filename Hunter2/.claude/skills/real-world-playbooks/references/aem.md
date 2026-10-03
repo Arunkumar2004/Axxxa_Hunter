@@ -215,3 +215,13 @@ SSRF via SiteCatalystServlet
 - **Run:** `recon · /scan-cves`
 - **Skill:** `web2-recon`
 - **Coverage-matrix tier:** 2 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- AEM fingerprint / version detection alone (tech-detect banner) with no exposed servlet returning data
+- Dispatcher default error page, `/crx`, or `/system/console` login merely reachable — still requires valid AEM credentials
+- QueryBuilder/DefaultGET servlet reachable but returns only public or empty nodes (no secrets, PII, or credentials dumped)
+- Nuclei `info`-severity AEM template match with no CVE PoC executed against the live instance
+- DoS endpoints (`.infinity.json`, `p.limit=-1`) — describe only; do not exploit, volumetric DoS is out of scope
+
+**Conditionally valid (only WITH a chain):** a default endpoint (QueryBuilder, Groovy console, DAM) returning real secrets/PII unauthenticated, or an SSRF/RCE chain with data/command proof → High/Critical.

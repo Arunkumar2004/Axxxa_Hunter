@@ -39,6 +39,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -79,7 +80,11 @@ def header(title: str):
 def load_config() -> dict:
     if CONFIG.exists():
         try:
-            return json.loads(CONFIG.read_text())
+            value = json.loads(CONFIG.read_text())
+            if not isinstance(value, dict):
+                warn(f"Invalid config shape in {CONFIG}; expected an object, using defaults")
+                return {}
+            return value
         except json.JSONDecodeError as e:
             warn(f"Corrupted config file {CONFIG}, using defaults: {e}")
         except OSError as e:
@@ -200,16 +205,23 @@ def _run_shell(cmd: list[str], cwd: str | None = None, timeout: int = 3600) -> t
     SECURITY-REVIEW-2026-08-22.md finding #5 for why shell=True with
     f-string-interpolated targets was a command injection bug."""
     try:
+        # ``echo`` is a shell builtin on Windows, not an executable. Keep the
+        # argv-only safety guarantee while supporting the common diagnostic
+        # command used by the standalone CLI and its tests.
+        if os.name == "nt" and cmd and cmd[0].lower() == "echo" and not shutil.which(cmd[0]):
+            output = " ".join(cmd[1:]) + os.linesep
+            print(output, end="", flush=True)
+            return True, output
         proc = subprocess.Popen(
             cmd, shell=False, cwd=cwd or str(HERE),
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
         )
-        lines = []
-        for line in proc.stdout:
-            print(line, end="", flush=True)
-            lines.append(line)
-        proc.wait(timeout=timeout)
-        return proc.returncode == 0, "".join(lines)
+        # communicate() applies the timeout while the child keeps stdout open;
+        # iterating over proc.stdout first can block forever before wait() runs.
+        output, _ = proc.communicate(timeout=timeout)
+        if output:
+            print(output, end="", flush=True)
+        return proc.returncode == 0, output or ""
     except subprocess.TimeoutExpired:
         proc.kill()
         return False, "timed out"

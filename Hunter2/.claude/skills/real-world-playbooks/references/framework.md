@@ -131,3 +131,14 @@ This HackerOne report provides a great, reproducible example of exploiting Djang
 - **Run:** `recon · sast_scan.py`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 2 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Debug panel / `_profiler` / phpinfo reachable but no secret, source, or exploitable data extracted → informational
+- Django/Symfony banner or version fingerprint without a working CVE exploit against the live service
+- Internal IP or stack path leaked in a debug/error page (internal IP in error message is a NEVER-SUBMIT)
+- Default framework routes (`/admin` login, `/_fragment`, default `/oidc`) reachable but no auth bypass or data read
+- Nuclei/template `info` match (version detection), no PoC actually executed against the running app
+- Verbose stack trace with no credential, secret, or PII in it
+
+**Conditionally valid (only WITH a chain):** debug mode / `_profiler` leaking `SECRET_KEY` or DB creds → source/secret leak → SSTI/RCE, pickle FileBasedCache write → RCE, or a proven Symfony secret-fragment exploit.

@@ -167,3 +167,13 @@ The payload `{{bad-stuff-here}}` is injected into the `name` parameter. This pay
 - **Run:** `vuln_scanner.sh`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- `{{7*7}}` → `49` reflection only, in a client-side/sandboxed engine with no server-side execution
+- Detection where the "template" turns out to be reflected XSS, not server-side evaluation
+- Sandboxed engine where you cannot reach any RCE / file-read / SSRF gadget
+- tplmap/SSTImap "vulnerable" flag with no command output or file read shown
+- Math-eval works but no engine-specific gadget confirmed (no `id`, no file, no OOB)
+
+**Conditionally valid (only WITH a chain):** SSTI → RCE via a Jinja2/Twig/Freemarker gadget; sandboxed SSTI → confirmed file read or SSRF at minimum.

@@ -16,6 +16,7 @@ For each target, every row gets one status:
 | `TESTED` | Class was actually probed on a reachable surface; result recorded (found / not found). |
 | `FOUND` | A candidate/finding exists → routed to its skill + lead board. |
 | `N/A (reason)` | No reachable surface for this class — **must state why** (e.g. "no XML parser / no file upload / no GraphQL endpoint"). |
+| `BLOCKED (reason)` | Testing was required but could not continue — **must state the blocker** (e.g. "login wall", "operator approval", or "missing source"). |
 | `PENDING` | Not yet reached. A hunt is **not "done"** while any reachable class is `PENDING`. |
 
 **Rule:** silently skipping a class is forbidden. Either test it, or mark `N/A` with a

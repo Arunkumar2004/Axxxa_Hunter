@@ -207,3 +207,14 @@ python3 jwt_tool.py -Q "jwttool_706649b802c9f5e41052062a3787b291"
 - **Run:** `/jwt-scan · tools/jwt_scanner.py`
 - **Skill:** `auth-attacks`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- `alg:none` / signature-strip rejected by the server → theoretical, no forged token accepted
+- "The JWT is readable/decodable" — base64 is by design, not a disclosure
+- Sensitive-looking claims in the payload with no actual account impact
+- Token doesn't expire / long TTL alone, with no theft or forgery vector
+- RS256→HS256, `kid`, or `jwk` trick that the server rejects (no accepted forged token)
+- A weak-secret guess that didn't actually crack the HMAC key
+
+**Conditionally valid (only WITH a chain):** a forged token the server accepts — `alg:none`, RS256→HS256 confusion (public key as HMAC secret), cracked HMAC secret, or `kid`/`jwk` injection — minting another or admin user → ATO (Critical).

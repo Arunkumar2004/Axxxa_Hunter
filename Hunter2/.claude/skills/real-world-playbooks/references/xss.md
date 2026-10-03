@@ -454,3 +454,13 @@ This vulnerability can appear in all features of the application. If you want to
 - **Run:** `vuln_scanner.sh (dalfox+xsstrike) · /domxss · tools/dom_xss_harness.py`
 - **Skill:** `web2-vuln-classes, client-side-security`
 - **Coverage-matrix tier:** 0 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Self-XSS that only fires in your own account, with no CSRF / second-user delivery vector
+- `alert(1)` / `alert(document.domain)` popup only — no `document.cookie` exfil or session theft shown
+- Reflected payload where a `Content-Security-Policy` header blocks execution (sandbox context, script never runs)
+- Dalfox/XSStrike "reflection" with no confirmed rendered execution in a real browser DOM
+- XSS behind login/CSRF token with no way to deliver it to another user
+
+**Conditionally valid (only WITH a chain):** Self-XSS + CSRF to trigger it on a victim without their knowledge → Medium; stored XSS in an admin-viewed field → admin session/ATO.

@@ -115,6 +115,10 @@ Kill these before writing a report unless you have a proven chain or data delta:
 - MFA no lockout without OTP bypass
 - SAML metadata exposure without signature abuse
 
+## Rejection-Gate Pre-Check (automatic, runs before the 4 gates)
+
+`/validate` now runs an **automatic rejection-gate pre-check** before the 4 gates. It matches the finding against the always-rejected list — publishable API keys (`rzp_live_*`, `pk_live_*`), self-XSS, missing security headers, open-redirect-alone, theoretical/no-PoC, and out-of-scope — and **AUTO-REJECTS** on a hit with an override prompt, so you don't burn time writing a report that triage will close. Confirm the override only when you have a proven chain or data delta that lifts the finding off the list; otherwise let it kill and move on.
+
 ## 4 Gates — All Must Pass
 
 **Gate 0 (30 sec):**

@@ -90,10 +90,23 @@ def safe_urlopen(req: urllib.request.Request, timeout: float = 10, max_redirects
                 f"blocked redirect to disallowed host (SSRF guard): {hostname!r}"
             )
         preserve_body = resp.status in (307, 308)
+        current_host = (urlparse(current.full_url).hostname or "").lower().rstrip(".")
+        next_host = (hostname or "").lower().rstrip(".")
+        # Never carry bearer/cookie/API credentials to a redirect destination.
+        # Even same-site redirects are rebuilt without sensitive headers so a
+        # redirect cannot widen credential exposure through a host alias.
+        safe_headers = {
+            key: value
+            for key, value in current.header_items()
+            if key.lower() not in {
+                "authorization", "cookie", "proxy-authorization", "x-api-key",
+                "x-auth-token", "x-access-token",
+            }
+        }
         current = urllib.request.Request(
             next_url,
             data=current.data if preserve_body else None,
-            headers=dict(current.header_items()),
+            headers=safe_headers,
             method=current.get_method() if preserve_body else None,
         )
     raise urllib.error.URLError(f"too many redirects (>{max_redirects})")

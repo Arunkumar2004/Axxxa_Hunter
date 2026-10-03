@@ -1065,3 +1065,13 @@ username[$nin][admin]=admin&username[$nin][test]=test&pass[$ne]=7 #<Matches non 
 - **Run:** `/nosqli · tools/nosqli_scanner.py`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Operator injection (`$ne`/`$gt`) that only returns a DB error or type change — no auth bypass, no data out
+- Login payload accepted but no session or token actually granted (no real bypass)
+- `$where`/`$regex` probe with no rows or characters actually exfiltrated (technically-possible → downgrade, not submit)
+- Error message only, WAF-filtered, no data returned
+- Reflected error revealing MongoDB with no exploitable sink behind it
+
+**Conditionally valid (only WITH a chain):** `$ne`/`$gt` at login that actually returns a valid authenticated session → auth bypass → ATO; or `$where`/`$regex` blind extraction that pulls real credential/data characters end to end.

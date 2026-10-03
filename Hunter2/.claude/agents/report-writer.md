@@ -43,6 +43,13 @@ CVSS 4.0 factors: [AV, AC, AT, PR, UI, VC, VI, VA, SC, SI, SA]
 [Bug Class] in [Exact Endpoint] allows [attacker role] to [impact] [victim scope]
 ```
 
+## Coverage Matrix
+
+For a consolidated hunt report, read `memory/coverage/<target>.json` and include the
+complete class status summary. Do not describe a hunt as complete while a reachable
+class is `PENDING` or `BLOCKED`. Preserve the reason for every `N/A` and `BLOCKED`
+entry, and link `FOUND` entries to their evidence/finding paths.
+
 ## CVSS 4.0 Calculation
 
 CVSS 4.0 replaces the single CIA impact triad with two impact groups:

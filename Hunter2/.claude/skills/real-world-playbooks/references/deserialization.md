@@ -104,3 +104,14 @@ In PHP, specific magic methods are utilized during the serialization and deseria
 - **Run:** `/deser-hunt · tools/deser_probe.py`
 - **Skill:** `deserialization`
 - **Coverage-matrix tier:** 2 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Serialized blob identified (Java `rO0`, PHP `O:`, ViewState) but no tampering shown to change behavior
+- Gadget-chain claim with no working PoC — no RCE, no privesc, just "the vulnerable library is on the classpath"
+- A 500/exception from a malformed serialized object with no code execution or data impact
+- Deserialization that only crashes the worker (app-level DoS) — usually out of scope
+- Reflected/echoed serialized data with no untrusted-deserialization sink proven
+- Self-only tampering that affects the attacker's own object/session
+
+**Conditionally valid (only WITH a chain):** a serialized cookie/ViewState/blob tampered into a working gadget chain that returns command output (RCE) or flips privilege/identity → Critical.

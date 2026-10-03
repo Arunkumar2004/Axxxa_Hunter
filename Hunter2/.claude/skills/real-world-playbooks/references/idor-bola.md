@@ -366,3 +366,14 @@ PUT /api/lead/cem-xhr HTTP/1.1
 - **Run:** `tools/h1_idor_scanner.py · tools/h1_mutation_idor.py · tools/apispec_idor.py · /api-audit`
 - **Skill:** `api-security, auth-attacks`
 - **Coverage-matrix tier:** 0 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- "IDOR" where the ID in the response is your own account (attacker == victim) — own-data only
+- Only a 200 status returned, no actual other-user data visible in the response body
+- Works only with NO auth header → that's missing-auth, not IDOR (different bug, different severity)
+- Reproduces under only one identity — fails the Q8 cross-identity / stale-cred check
+- "API returns more fields than necessary" where the extra fields aren't actually sensitive
+- "Admin can do X on behalf of a user" — admin-precondition centralization risk
+
+**Conditionally valid (only WITH a chain):** must prove cross-account access — session A reading/writing session B's object. On an email/password field → full ATO (Critical); write/DELETE on other users' objects → High.

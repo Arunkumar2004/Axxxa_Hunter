@@ -115,3 +115,14 @@ The application of the same-origin policy in the context of `http://normal-websi
 - **Run:** `/cors · tools/cors_scanner.py`
 - **Skill:** `client-side-security`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- ACAO reflects the Origin but no credentials/sensitive data returned → informational (no `Access-Control-Allow-Credentials`, no cookies ride the request)
+- `Access-Control-Allow-Origin: *` on an endpoint that returns only public, non-sensitive data
+- Credentialed cross-origin request returns 401/403 — the misconfig doesn't actually expose authed data
+- Trusted-subdomain or preflight-only reflection with no reachable attacker origin
+- Missing CORS headers reported as a vulnerability (that's the safe default)
+- PoC that reads only your own account's data (self, not cross-victim)
+
+**Conditionally valid (only WITH a chain):** ACAO reflects an attacker origin AND ACAC:true AND a credentialed request exfils another user's PII/token → High (chain to ATO).

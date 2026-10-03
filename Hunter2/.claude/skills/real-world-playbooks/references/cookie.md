@@ -278,3 +278,14 @@ When two cookies bear the same name, the one chosen for sending is based on:
 - **Run:** `/auth-hunt · /crlf`
 - **Skill:** `auth-attacks`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Missing HttpOnly / Secure / SameSite flags alone — no theft or fixation demonstrated
+- Sensitive-looking cookie value that is actually opaque/encrypted, with no decode or reuse shown
+- "Session doesn't expire on logout" / concurrent sessions / long expiry with no hijack
+- Cookie-bomb DoS on a non-critical flow (usually out of scope as app-level DoS)
+- Cookie injection via CRLF with no session, XSS, or privilege impact proven
+- Cookie tampering that the server rejects or that only affects the attacker's own account
+
+**Conditionally valid (only WITH a chain):** cookie theft via a real XSS/MITM sink, session fixation → hijack, or cross-subdomain `Domain` scoping abused to lift another user's session → High.

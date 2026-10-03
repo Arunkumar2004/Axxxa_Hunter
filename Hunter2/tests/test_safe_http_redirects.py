@@ -63,6 +63,22 @@ class TestSafeUrlopenRejectsRedirectToBlockedHost:
             result = safe_urlopen(req)
             assert result is final
 
+    def test_sensitive_headers_are_not_forwarded_on_redirect(self):
+        req = urllib.request.Request(
+            "https://target.example/start",
+            headers={"Authorization": "Bearer secret", "Cookie": "sid=secret"},
+        )
+        redirect_resp = MagicMock()
+        redirect_resp.status = 302
+        redirect_resp.headers = {"Location": "https://target.example/final"}
+        final = MagicMock()
+        final.status = 200
+        with patch("tools.safe_http._one_hop", side_effect=[redirect_resp, final]) as hop:
+            safe_urlopen(req)
+            redirected_request = hop.call_args_list[1].args[0]
+            assert "Authorization" not in dict(redirected_request.header_items())
+            assert "Cookie" not in dict(redirected_request.header_items())
+
     def test_too_many_redirects_raises(self):
         req = urllib.request.Request("https://target.example/start")
         loop_resp = MagicMock()

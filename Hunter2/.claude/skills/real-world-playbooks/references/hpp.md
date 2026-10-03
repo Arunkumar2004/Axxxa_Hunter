@@ -134,3 +134,13 @@ The transaction may be incorrectly charged to `accountC` instead of `accountA`, 
 - **Run:** `/hpp · tools/hpp_postmessage_scanner.py`
 - **Skill:** `client-side-security`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Duplicate parameter accepted but server behavior unchanged (no filter/validation bypass, no state change)
+- HPP that only affects your own request/session — self-only, no cross-user impact
+- postMessage listener with no origin check but no sensitive sink (no DOM XSS, no data exfil)
+- Reflected value via HPP where CSP blocks execution and no cookie/session is reachable
+- A parsing difference (first-vs-last-value) that is purely theoretical with no security consequence
+
+**Conditionally valid (only WITH a chain):** HPP that bypasses a WAF/validation to reach a real sink or overrides an auth/transaction param (`from=`/`to=`, `blogID` swap) → account/transaction takeover; or a missing-origin postMessage listener → DOM XSS / data theft.

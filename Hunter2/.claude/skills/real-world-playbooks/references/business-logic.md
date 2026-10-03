@@ -311,3 +311,14 @@ To View and Modify HTTP/HTTPS Headers, Post Parameters, and Observe the DOM of t
 - **Run:** `business-logic-hunter agent · tools/h1_race.py`
 - **Skill:** `race-conditions`
 - **Coverage-matrix tier:** 0 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Price/quantity/discount tampering that the server recalculates or rejects at checkout — the modified value never reaches the final charge
+- Negative-quantity or currency-arbitrage idea with no completed transaction proving monetary gain
+- Coupon/limit "reuse" that the backend still enforces (client-side control only)
+- Rating/review outside the 1–5 scale, or duplicate reviews, with no security or monetary impact
+- Workflow step-skip that lands on an error/500 with no data leak or bypassed payment
+- "Admin can override the limit" — privileged capability, not a flaw
+
+**Conditionally valid (only WITH a chain):** a completed abuse with tangible impact — free/negative-total purchase, infinite credit, unpaid premium access, or a race that double-spends/double-refunds → Medium/High.

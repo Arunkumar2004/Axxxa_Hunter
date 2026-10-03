@@ -255,3 +255,14 @@ In PHP, specific magic methods are utilized during the serialization and deseria
 - **Run:** `oob_listener.py (blind) · vuln_scanner.sh · /deser-hunt`
 - **Skill:** `web2-vuln-classes, deserialization`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Version/banner disclosure matching a known CVE with no working exploit actually run
+- nuclei `info`/`low` template match with no code execution demonstrated on the live service
+- Blind command-injection "hunch" with no OOB DNS/HTTP callback confirming execution
+- Deserialization gadget theory with no proof the payload deserialized/executed
+- Exposed `.git`/source disclosure alone (that's info-disclosure, not RCE) with no secret leveraged
+- Dependency-confusion namespace claim with no callback proving the package was installed
+
+**Conditionally valid (only WITH a chain):** confirmed execution via upload / SSTI / deserialization / command-injection / known CVE; blind RCE proven by OOB callback then escalated to a reverse shell (authorized).

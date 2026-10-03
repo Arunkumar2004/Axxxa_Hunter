@@ -244,3 +244,14 @@ Github recon Via github dorks to find secret:-
 - **Run:** `recon · /scan-cves`
 - **Skill:** `web2-recon`
 - **Coverage-matrix tier:** 2 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Jira/Confluence version/banner fingerprint with no working CVE exploit against the live instance
+- User / project-key / username enumeration alone (info endpoint) with no sensitive data or access gained
+- Unauthenticated dashboard or gadget reachable but returning nothing sensitive
+- `/rest/api/2/mypermissions` returning only default/expected privileges
+- Nuclei `info` match on a Jira CVE path with no PoC that actually returns data
+- `pom.xml` / internal path leak with no secret in it
+
+**Conditionally valid (only WITH a chain):** a Jira CVE that actually fires — SSRF returning internal data (CVE-2019-8451, CVE-2022-26135), SSTI→RCE (CVE-2019-11581), or private gadget/config disclosure (CVE-2020-36287) — with proof of the data or execution.

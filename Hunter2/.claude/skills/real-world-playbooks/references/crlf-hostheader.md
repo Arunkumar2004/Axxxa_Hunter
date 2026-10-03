@@ -223,3 +223,14 @@ An attacker can exploit a CRLF injection to manipulate this log. By injecting CR
 - **Run:** `/crlf · tools/crlf_scanner.py`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Host-header injection alone — reflected into a response/link but no password-reset email or cache actually poisoned
+- CRLF where the payload is HTML-encoded/stripped and no header is genuinely injected into the response
+- `X-Forwarded-Host` reflected into a body link with no security-relevant sink (no reset link, no cache key)
+- Cache "poisoning" against an uncacheable/personalized response (nothing stored for other users)
+- CRLF that injects a header but yields no Set-Cookie control, XSS, or redirect impact
+- Self-only or theoretical splitting with no downstream victim
+
+**Conditionally valid (only WITH a chain):** host-header injection where the password-reset email uses the injected host (token to attacker → ATO), or CRLF → Set-Cookie injection / cache poisoning / reflected XSS with a working PoC → High.

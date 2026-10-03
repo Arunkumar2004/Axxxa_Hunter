@@ -317,3 +317,13 @@ wfuzz -c -w ./lfi2.txt --hw 0 http://10.10.10.10/nav.php?page=../../../../../../
 - **Run:** `vuln_scanner.sh · manual`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Traversal payload returns 200/redirect but no file contents actually read (technically-possible only)
+- Reads a non-sensitive / world-readable file (e.g. `/etc/issue`) with no secret, credential, or PII
+- WAF/normalizer blocks it — theoretical, no bytes exfiltrated
+- File path shown in an error but the file itself is not retrievable
+- "`../` accepted" where the response is identical to baseline
+
+**Conditionally valid (only WITH a chain):** traversal/LFI that actually returns a sensitive file (`/etc/passwd`, SSH keys, app config/secrets, k8s serviceaccount token) → creds → authed access; or LFI + log-poisoning / PHP wrappers → RCE.

@@ -185,3 +185,13 @@ Browser sends a handshake request:
 - **Run:** `/websocket · tools/websocket_scanner.py`
 - **Skill:** `client-side-security`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- WS handshake accepts a cross-origin `Origin` but the socket carries no auth/session and no sensitive action
+- No missing Origin/CSRF check actually proven — connection works but returns only public data
+- "No Origin validation" where the app uses per-message tokens the attacker page cannot read
+- Injection over WS messages that only affects your own session/data
+- Unencrypted `ws://` or missing-header observation alone (best-practice, not impact)
+
+**Conditionally valid (only WITH a chain):** no Origin check on an authenticated WS handshake → hijack the victim's socket → read their data or perform sensitive actions (CSWSH).

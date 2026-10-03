@@ -163,3 +163,14 @@ works in another domain too.
 - **Run:** `/auth-hunt`
 - **Skill:** `auth-attacks`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Host-header injection alone with no proof the reset email/link actually used the injected host
+- Reset token "theoretically" leaking in referrer/response — no token redeemed to take over an account
+- MFA/reset-code rate-limit weakness where no code was ever actually accepted
+- token=null/0000/empty "accepted" on your own account only — no victim account reset
+- Session-not-invalidated-on-reset alone (it is on the never-submit list)
+- Self-reset flows that never cross into another user's account
+
+**Conditionally valid (only WITH a chain):** Host-header poisoning where the reset link points to an attacker host → token theft → ATO; token leak in referrer / predictable token redeemed → ATO; IDOR on userId in reset → ATO.

@@ -213,3 +213,14 @@ ls%0abash%09-c%09"id"%0a   # (Combining new lines and tabs)
 - **Run:** `oob_listener.py · vuln_scanner.sh`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Special characters echoed back in the response with no evidence a command actually ran (reflection ≠ execution)
+- A 500 / error string from injected metacharacters, but no command output and no OOB callback
+- Payload that fires only in your own local/sandbox context, never on the server
+- "Blind" claim with no Interactsh/Collaborator hit and no timing delta proving execution
+- CSV/formula "injection" into a field reported as command injection with no code execution shown
+- Argument/flag injection into a wrapped CLI with no resulting file read, exec, or data impact
+
+**Conditionally valid (only WITH a chain):** blind injection confirmed by an OOB callback or reliable time delay, or direct output returning real command results (`id`, `/etc/passwd`) → Critical (RCE).

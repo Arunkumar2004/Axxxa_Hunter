@@ -54,3 +54,15 @@ class TestBuildAuthJson:
         # AuthSession consumes {"cookie": ...} / {"bearer": ...} / {"headers": [...]}
         assert set(p) <= {"cookie", "bearer", "headers", "api_key", "api_key_header", "_captured"}
         json.dumps(p)  # serialisable
+
+    def test_unrelated_cookies_are_never_fallback_captured(self):
+        p = build_auth_json([
+            {"name": "other", "value": "secret", "domain": "other.example"},
+        ], None, "target.example")
+        assert "cookie" not in p
+
+    def test_subdomain_cookie_is_scoped(self):
+        p = build_auth_json([
+            {"name": "sid", "value": "secret", "domain": ".example.com"},
+        ], None, "app.example.com")
+        assert p["cookie"] == "sid=secret"

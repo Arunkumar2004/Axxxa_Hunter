@@ -460,3 +460,14 @@ You could **capture the request in Burp** and check CSRF protections, and to tes
 - **Run:** `/csrf · tools/csrf_scanner.py`
 - **Skill:** `client-side-security`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Logout CSRF — logging the victim out is not a meaningful state change
+- CSRF on a non-state-changing action (search, view, add-to-cart with no consequence)
+- Login CSRF with no follow-on impact (victim lands in the attacker's account, nothing captured)
+- Endpoint that is actually protected — token tied to session, SameSite=Lax/Strict, or JSON-only with a preflight — so the PoC never fires cross-site
+- "No CSRF token" reported without a working cross-site PoC that completes the action
+- Self-only CSRF affecting the attacker's own account
+
+**Conditionally valid (only WITH a chain):** CSRF + a sensitive state-changing action (change email/password, transfer funds, delete account, add admin) + a working cross-site PoC → High.

@@ -1370,3 +1370,14 @@ When looking for exposed GraphQL endpoints, include common paths in content-disc
 - **Run:** `/api-audit · tools/api_security_scanner.py · tools/apispec_idor.py`
 - **Skill:** `api-security`
 - **Coverage-matrix tier:** 0 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- BOLA/IDOR where the ID in the response is your own account — attacker == victim, no cross-account data proven
+- Mass-assignment of a field (`isAdmin`, `role`) that the response echoes but that grants no actual privilege or access
+- BOPLA "extra fields returned" where the fields are non-sensitive — over-fetching is not impact
+- GraphQL introspection enabled alone, with no auth-bypass mutation or IDOR on a node demonstrated
+- A "BOLA" that works with no token at all — that's missing auth (different, lower-value bug); confirm under session A reading session B's data
+- Rate-limit-only on a non-critical API endpoint (search, listing) behind a CDN
+
+**Conditionally valid (only WITH a chain):** low-priv token reading/writing another tenant's object (BOLA), calling an admin-only function (BFLA), or mass-assignment that actually escalates role/verification → High.

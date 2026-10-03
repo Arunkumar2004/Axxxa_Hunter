@@ -66,3 +66,14 @@ Example permission set:
 - **Run:** `/mobile-scan`
 - **Skill:** `mobile-pentest`
 - **Coverage-matrix tier:** 3 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- OAuth `client_secret` / API key hardcoded in the APK/IPA that is public/expected (known) → informational
+- Missing SSL pinning or root/jailbreak detection alone, with no intercepted data or hidden-API abuse
+- Exported activity / deeplink / WebView present but no injection or sensitive data reached
+- Cleartext-storage / SharedPreferences finding with no actually-sensitive value stored
+- Tapjacking or a static-analysis "issue" with no runtime impact
+- `android:debuggable` / `allowBackup` flag set, alone
+
+**Conditionally valid (only WITH a chain):** hardcoded secret/endpoint → authed API abuse; SSL-pin bypass → proxy the hidden API → IDOR/BOLA reading another user's data; or a WebView bridge / deeplink that reaches a real injection sink.

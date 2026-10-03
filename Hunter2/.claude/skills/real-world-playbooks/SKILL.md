@@ -47,7 +47,32 @@ built from real public sources:
 This is depth discipline in practice: the playbook is why the agent tests thoroughly
 instead of drifting.
 
-## Playbook index (44 classes)
+## Phase 1 priority ledger
+
+For the first operational upgrade, use
+`PHASE1_PRIORITY_LEDGER.md`. It indexes 50 public references across IDOR/BOLA/BFLA,
+authentication/ATO, SSRF, command injection/RCE, and business logic/race conditions.
+The ledger records the required route for each group:
+
+```text
+report -> playbook -> agent -> tool -> validation -> evidence -> report
+```
+
+The ledger is an index and extraction contract, not a raw report archive. Keep live
+credentials, cookies, target data, and raw authenticated traffic out of it.
+
+`PHASE1_REPORT_CATALOG.md` contains the compact metadata and redacted public summaries
+fetched for the 50 selected reports. Use it with `PHASE1_EXTRACTIONS.md`: the catalog
+anchors the public case, while the extraction file records the reusable Hunter2 method
+and safe proof contract.
+
+`PHASE1_EXTERNAL_RESEARCH.md` records the separate PortSwigger, OWASP, and methodology
+cross-checks. These sources improve method quality but are not counted as the 50 report
+case minimum.
+
+`PHASE1_COMPLETION.md` is the acceptance record for the 70-case Phase 1 dataset.
+
+## Playbook index (54 classes)
 
 **Tier 0 — always test first**
 `idor-bola` · `account-takeover` · `ssrf` · `xss` · `business-logic` · `auth-session` · `api-auth`
@@ -61,10 +86,13 @@ instead of drifting.
 
 **Tier 2 — reasoning / chained / framework**
 `request-smuggling` · `web-cache` · `deserialization` · `race-condition` · `aem` · `jira` ·
-`framework`
+`framework` · `parser-differentials` · `resource-consumption` · `security-misconfiguration`
 
 **Tier 3 — infra / mobile (surface-gated)**
 `subdomain-takeover` · `mobile` · `dos`
+
+**Phase 2 additions:** `saml-sso` · `llm-agentic` · `cloud-storage` · `kubernetes` ·
+`cicd-supply-chain` · `secrets-leak` · `api-inventory-consumption`
 
 ## Top cross-class chaining recipes (memorize these)
 

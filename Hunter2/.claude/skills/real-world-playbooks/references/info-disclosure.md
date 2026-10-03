@@ -75,3 +75,14 @@ If a **web page displays sensitive information based on the current session**—
 - **Run:** `recon · vuln_scanner.sh · tools/secrets_hunter.sh · tools/sourcemap_extract.py`
 - **Skill:** `web2-recon`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Low-impact version/banner disclosure or verbose errors with no sensitive data → informational
+- Internal IP in an error message; mixed content; SSL weak ciphers
+- Missing security headers (CSP/HSTS), missing HttpOnly/Secure cookie flags alone
+- SAML metadata / public signing cert exposed (documented by the IdP, no private key or cert extracted)
+- Stack trace revealing the tech stack with no secret, credential, or PII
+- Nuclei `info` template match — detection, not exploitation
+
+**Conditionally valid (only WITH a chain):** leaked API key/secret in a JS bundle, `.git`, or source map → authed API abuse; S3/bucket listing + keys in JS → Medium/High; leaked userID/email → chained IDOR/BOLA with the other user's data actually read.

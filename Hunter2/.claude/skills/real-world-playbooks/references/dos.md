@@ -182,3 +182,14 @@ An "evil regex" is a pattern that performs excessive work on a crafted input. Co
 - **Run:** `(analyze only — NEVER run load/DoS)`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 3 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Application-level DoS / rate-limit-only without security impact — usually out of scope; Hunter2 never runs load/DoS
+- Volumetric / flood / amplification against production — out of scope on nearly every program
+- Rate-limit-only on a non-critical form (search, contact, login behind Cloudflare) with no security consequence
+- Cookie-bomb / long-input / pixel-flood reported without demonstrating sustained outage impact on other users
+- "Server got slow" with no reproducible, bounded, low-cost trigger (fails Q1's step-2 request)
+- Single-account self-DoS, or a theoretical ReDoS never confirmed against the live service
+
+**Conditionally valid (only WITH a chain):** a low-cost, unauthenticated, reproducible logic/amplification DoS (GraphQL mutation aliasing, ReDoS, cache-poisoned DoS) impacting all users — DESCRIBE, do not exploit; report carefully → Medium/High where in scope.

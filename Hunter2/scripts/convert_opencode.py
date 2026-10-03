@@ -61,3 +61,44 @@ for gen in CMD_DST.glob("*.md"):
         gen.unlink()
         print(f"pruned stale command {gen.name}")
 print(f"copied {len(list(CMD_SRC.glob('*.md')))} commands")
+
+
+def sync_flat_markdown(source: Path, destination: Path) -> None:
+    """Synchronize a harness mirror from a flat canonical Markdown directory."""
+    destination.mkdir(parents=True, exist_ok=True)
+    for path in sorted(source.glob("*.md")):
+        shutil.copy2(path, destination / path.name)
+    source_names = {p.name for p in source.glob("*.md")}
+    for path in destination.glob("*.md"):
+        if path.name not in source_names:
+            path.unlink()
+            print(f"pruned stale mirror {path.name}")
+
+
+sync_flat_markdown(SRC, ROOT / ".claude" / "agents")
+sync_flat_markdown(CMD_SRC, ROOT / ".claude" / "commands")
+
+
+def sync_skills(destination: Path) -> None:
+    """Keep harness-local skills identical to the canonical skills tree."""
+    source = ROOT / "skills"
+    destination.mkdir(parents=True, exist_ok=True)
+    for path in sorted(source.rglob("*")):
+        relative = path.relative_to(source)
+        target = destination / relative
+        if path.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target)
+
+    source_files = {p.relative_to(source) for p in source.rglob("*") if p.is_file()}
+    for path in sorted(destination.rglob("*"), reverse=True):
+        if path.is_file() and path.relative_to(destination) not in source_files:
+            path.unlink()
+            print(f"pruned stale skill {path.relative_to(destination)}")
+
+
+sync_skills(ROOT / ".opencode" / "skills")
+sync_skills(ROOT / ".claude" / "skills")
+print(f"synced skills to .opencode and .claude")

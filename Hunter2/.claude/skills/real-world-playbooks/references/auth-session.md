@@ -237,3 +237,14 @@ password required /lib/security/pam_cracklib.so
 - **Run:** `/auth-hunt · tools/jwt_scanner.py · tools/h1_oauth_tester.py`
 - **Skill:** `auth-attacks`
 - **Coverage-matrix tier:** 0 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- "Session not invalidated on logout" / concurrent sessions / long expiry alone — no session hijack shown
+- Weak password policy, password-field autocomplete, or registration over HTTP with no captured credential
+- Username/email enumeration via error message or timing alone (no spray or takeover chained)
+- No rate limit / no CAPTCHA on login or a form behind Cloudflare, where no password/OTP was actually cracked
+- MFA rate-limit with no lockout where 15+ attempts returned 200 but no OTP was ever accepted
+- Missing HttpOnly/Secure cookie flags reported as an auth bug on their own
+
+**Conditionally valid (only WITH a chain):** auth bypass that works with NO valid session, session fixation/prediction leading to hijack, or verbose-error enumeration + a successful credential spray → High/Critical.

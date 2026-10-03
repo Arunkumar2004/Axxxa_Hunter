@@ -130,3 +130,13 @@ In the following page you will find the basics of each component to build a basi
 - **Run:** `/takeover · tools/takeover_scanner.sh (DETECT-ONLY)`
 - **Skill:** `cloud-security`
 - **Coverage-matrix tier:** 3 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Dangling CNAME pointing at a service that is not actually claimable (unsupported/edge provider per can-i-take-over-xyz)
+- subzy/nuclei fingerprint match with no manual validation and no PoC content served
+- NXDOMAIN/404 on a subdomain with no proof the underlying resource can be registered by you
+- Takeover on an out-of-scope or non-production subdomain
+- Detection-only result where the resource was never (and must never be) actually claimed — no served PoC page
+
+**Conditionally valid (only WITH a chain):** confirmed claimable dangling record (can-i-take-over-xyz) with a benign verification/PoC page served, escalated via OAuth redirect_uri or cookie-scoped subdomain → ATO (Critical). Stay DETECT-ONLY — never claim the resource.

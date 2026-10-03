@@ -1,0 +1,5 @@
+# Mydukaan authorized wildcard scope from https://mydukaan.io/bugbounty/
+*.mydukaan.io
+# Explicit exclusions
+# blog.mydukaan.io
+# roadmap.mydukaan.io

@@ -65,8 +65,15 @@ def detect_login_success(current_url: str, start_url: str, cookies: list[dict], 
 
 def build_auth_json(cookies: list[dict], bearer: str | None, domain: str) -> dict:
     """Pure: build the AuthSession JSON payload from captured material."""
-    scoped = [c for c in cookies if not domain or (c.get("domain", "").lstrip(".") in domain or domain in c.get("domain", ""))]
-    cookie_pairs = [f"{c['name']}={c['value']}" for c in (scoped or cookies) if c.get("name")]
+    host = (domain or "").lower().lstrip(".").rstrip(".")
+    scoped = []
+    for cookie in cookies:
+        cookie_domain = (cookie.get("domain") or "").lower().lstrip(".").rstrip(".")
+        if host and cookie_domain and (host == cookie_domain or host.endswith("." + cookie_domain)):
+            scoped.append(cookie)
+    # Never fall back to unrelated browser cookies. An empty scoped set is safer
+    # than sending credentials belonging to another origin.
+    cookie_pairs = [f"{c['name']}={c['value']}" for c in scoped if c.get("name")]
     payload: dict = {}
     if cookie_pairs:
         payload["cookie"] = "; ".join(cookie_pairs)

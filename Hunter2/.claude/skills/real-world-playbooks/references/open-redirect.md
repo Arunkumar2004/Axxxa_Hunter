@@ -218,3 +218,13 @@ http://www.yoursite.com/folder/www.folder.com
 - **Run:** `vuln_scanner.sh · /client-side`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Open redirect alone (no OAuth token / auth-code theft, no ATO chain) → informational
+- Redirect to an arbitrary domain with nothing sensitive in the URL (no token / `authenticity_token` leaked)
+- Tabnabbing, or a redirect used only as a phishing pretext with no credential-capture PoC
+- Redirect that only works within your own session
+- "`//evil.com` works" with no demonstrated downstream impact
+
+**Conditionally valid (only WITH a chain):** an open redirect on an OAuth `redirect_uri` — or a page that carries an auth code / `authenticity_token` / session token in the URL — that leaks it to the attacker → ATO (Critical); or an SSRF filter-bypass chain.

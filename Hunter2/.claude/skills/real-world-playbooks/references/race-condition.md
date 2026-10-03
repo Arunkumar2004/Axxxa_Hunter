@@ -186,3 +186,13 @@ Here you can find some techniques for Synchronizing Requests:
 - **Run:** `/race · tools/h1_race.py · business-logic-hunter`
 - **Skill:** `race-conditions`
 - **Coverage-matrix tier:** 2 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Race that only affects your own account/limits with no financial or security impact
+- Overrun on a non-critical counter (likes, votes, view counts) — nothing tangible walked away with
+- "Duplicate" requests that succeed but the backend later reconciles/rejects them (no net gain)
+- MFA/OTP submit race that returned 200s but no OTP code was actually accepted
+- Needs >2 simultaneous preconditions to line up, or single-packet timing you cannot reproduce
+
+**Conditionally valid (only WITH a chain):** limit-overrun that redeems coupon / withdraws / transfers N× → money; TOCTOU on balance/state → double-spend; OTP/MFA submit race that brute-forces past the rate-limit.

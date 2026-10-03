@@ -160,3 +160,14 @@ A HTTP proxy can be a useful tool to test this control.
 - **Run:** `/auth-hunt`
 - **Skill:** `auth-attacks`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- No-rate-limit on the signup form alone (non-critical, often behind Cloudflare) — no OTP/payment surface abused
+- Weak password policy / disposable-email acceptance / autocomplete-on — best-practice nits, not vulns
+- DoS via long password/username field (500 error) with no real availability impact
+- Self-only duplicate registration that doesn't collide with or lock out a victim account
+- XSS-in-username "found" but never rendered/executed against another user
+- Pre-account takeover claimed without the very specific preconditions actually met
+
+**Conditionally valid (only WITH a chain):** email-verification bypass → trusted/privileged account; duplicate/normalization collision (unicode, +alias, case) that overwrites a victim's account → ATO; pre-ATO with all conditions proven.

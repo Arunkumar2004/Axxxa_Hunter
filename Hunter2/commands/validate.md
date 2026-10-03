@@ -8,6 +8,7 @@ Run full validation on the current finding before writing a report.
 
 ## What This Does
 
+0. Runs an **automatic rejection-gate pre-check** (`tools/rejection_gate.py`, Phase 1 Step #4) — AUTO-REJECTS known-invalid classes up front, before anything else
 1. Runs 7-Question Gate (one wrong answer = kill it)
 2. Checks against the always-rejected list
 3. Runs 4 pre-submission gates
@@ -114,6 +115,12 @@ Kill these before writing a report unless you have a proven chain or data delta:
 - Open redirect without token theft
 - MFA no lockout without OTP bypass
 - SAML metadata exposure without signature abuse
+
+## Automatic Rejection-Gate Pre-Check (runs BEFORE the 4 gates)
+
+Before the gates run, `/validate` fires an **automatic rejection-gate pre-check** (`tools/rejection_gate.py`, **Phase 1 Step #4**). It asks you for a one-line description of the finding and matches it against the always-rejected list — publicly-publishable / client-side API keys (`rzp_live_*`, `pk_live_*`, etc.), self-XSS, missing security headers, open-redirect-alone, theoretical / no-PoC findings, out-of-scope assets, and the rest.
+
+If the finding is on that list it is **AUTO-REJECTED** (with an override prompt), saving you from writing a report that will be closed as invalid. Everything else falls through to the 7-Question Gate and the 4 gates below.
 
 ## 4 Gates — All Must Pass
 

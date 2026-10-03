@@ -144,3 +144,13 @@ The execution of a cache poisoning assault involves several steps:
 - **Run:** `novel-vuln-reasoner`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 2 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Unkeyed header reflected but the response is never actually cached (`Cache-Control: no-store`, `X-Cache: MISS`)
+- Reflection visible only in your own request — no proof it persists and serves to another user
+- Cache deception where the "cached" page carries no sensitive data / no cross-user impact
+- `Cf-Cache-Status: MISS` or `Error` (not `HIT`) on the crafted request — nothing was poisoned
+- Host / `X-Forwarded-Host` echo with no cache-key confirmation
+
+**Conditionally valid (only WITH a chain):** unkeyed header reflected AND cached → stored XSS to all users; cache deception (/account/foo.css) that caches a victim's private page / CSRF token → info leak or ATO.

@@ -44,6 +44,44 @@ validation → report** — from either **OpenCode** or **Claude Code**.
 
 ## What's New in Hunter 2
 
+### 🔥 EXTREME Upgrade — the active-hunter engine (Level 1 complete)
+
+Hunter 2 now doesn't just *hold* knowledge — it **acts on it automatically**, identically in
+Claude Code and OpenCode. Full plan + progress: [`TO_EXTREME.md`](TO_EXTREME.md).
+
+- **Auto-playbook per lead** — every `hunt` writes `findings/<target>/PLAYBOOKS.md` and the
+  agent opens the matching real-world playbook (checklist + rejection rules) before testing.
+  (`tools/playbook_router.py`)
+- **Two-account IDOR/BOLA harness** — `hunt <target> --two-account` replays account A's
+  requests with account B's auth to find cross-tenant reads (the #1 money-bug move). Reads
+  your own `ACCOUNT_A_*`/`ACCOUNT_B_*` from `.env`; safe methods by default; never logs
+  tokens. (`tools/two_account_idor.py`)
+- **Auto-chain after a hit** — each confirmed access-control hit auto-generates sibling
+  (`/export`,`/delete`,`/v1/`…) + A→B next-tests → `findings/<target>/chains.json`.
+  (`tools/chain_engine.py`)
+- **Rejection gate in `/validate`** — auto-kills always-rejected findings (public keys like
+  `rzp_live_*`, self-XSS, missing headers, theoretical, out-of-scope) before you waste a
+  report. (`tools/rejection_gate.py`)
+- **Learning memory** — every hunt records what worked / got rejected / dead-ended
+  (`memory/hunt_outcomes.jsonl`); the next hunt loads it so the tool compounds.
+  (`tools/hunt_memory.py`)
+- **All 54 playbooks leveled** — every class now has tool mapping + test-flow checklist +
+  rejection rules (54/54 on all three). Windows portability fixed (recon no longer skips).
+
+#### Level 2 — the "thinks like a hunter" layer (2 of 3 built)
+- **Attack-surface graph** — connects the flat URL list into a map
+  (host → family → endpoint → param), flags IDOR/action candidates, sibling clusters, and
+  version anomalies. `--probe` adds LIVE auth-probing (anon/A/B) → real missing-auth +
+  cross-account leads + role reachability. (`tools/surface_graph.py` → `SURFACE_GRAPH.md`)
+- **Feedback loop** — records real submission outcomes (PAID/REJECTED/DUPLICATE/
+  INFORMATIVE); next hunt boosts paid techniques and avoids rejected ones.
+  (`tools/feedback_loop.py`)
+- *Not yet built:* hypothesis engine (the deep novel-reasoning piece — the remaining tier).
+
+- **Verified:** full test suite **867 passed, 10 skipped**. Connection board
+  (`py tools/start.py <target>`) shows what's armed before every hunt. See the one-page
+  [`HUNT_RUNBOOK.md`](HUNT_RUNBOOK.md) and [`HOW_IT_HUNTS.md`](HOW_IT_HUNTS.md).
+
 ### 🧠 Real-Hunter Upgrade (Lead Commander + real-world knowledge)
 
 The biggest change: Hunter 2 now runs like a **disciplined human attacker**, identically in
@@ -60,7 +98,7 @@ The biggest change: Hunter 2 now runs like a **disciplined human attacker**, ide
   canonical **A→Z class list** (OWASP Web + API + LLM Top 10 + PortSwigger full topic list).
   Every class is tracked `FOUND / TESTED / N/A-with-reason / PENDING`; a hunt isn't "done"
   while any reachable class is `PENDING`.
-- **`real-world-playbooks` skill (new):** **44 per-class playbooks** distilled from real
+- **`real-world-playbooks` skill:** **54 per-class playbooks** distilled from real
   disclosed **HackerOne reports** (`reddelexc/hackerone-reports` — technique + bounty + link)
   and hands-on **test-flow checklists** (`Az0x7/vulnerability-Checklist`), plus chaining
   recipes and Hunter2 tool wiring. Refresh anytime: `python scripts/gen_real_world_playbooks.py`.

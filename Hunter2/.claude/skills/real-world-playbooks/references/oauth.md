@@ -213,3 +213,13 @@ It's essential to grasp the following components within the OAuth 2.0 framework:
 - **Run:** `tools/h1_oauth_tester.py · /auth-hunt`
 - **Skill:** `auth-attacks`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- `client_secret` in a mobile / public / SPA client (known, expected) → informational
+- `redirect_uri` "open redirect" with no auth code or access token actually in the redirected URL
+- Missing `state` param with no CSRF / account-linking impact demonstrated
+- Consent/permission-screen wording issue with no unauthorized access granted
+- Login CSRF or self-XSS on the OAuth flow with no victim impact
+
+**Conditionally valid (only WITH a chain):** a `redirect_uri` bypass, referrer leak, or open redirect that actually exfiltrates the auth code/token → account takeover; or missing `state` → forced account-linking → ATO, proven end to end.

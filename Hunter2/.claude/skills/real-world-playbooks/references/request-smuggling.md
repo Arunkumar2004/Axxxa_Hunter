@@ -209,3 +209,13 @@ This turns connection reuse into an SSRF-like primitive against **internal virtu
 - **Run:** `novel-vuln-reasoner · vuln_scanner.sh`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 2 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Timing-differential/desync "signal" (delayed response) with no smuggled request actually processed
+- CL.TE/TE.CL probe returns a 404/500 but you never poisoned another user's request or reached a restricted path
+- Smuggler/nuclei "potential" flag with no reproducible split confirmed on the live edge
+- Behaviour on an out-of-scope CDN / shared front-end the program does not own
+- Self-only response corruption — no cross-user or queue-poisoning impact demonstrated
+
+**Conditionally valid (only WITH a chain):** confirmed desync → poison the next user's request → cred/session theft; smuggle → bypass front-end auth/WAF to reach an internal path; smuggle → cache poisoning at scale.

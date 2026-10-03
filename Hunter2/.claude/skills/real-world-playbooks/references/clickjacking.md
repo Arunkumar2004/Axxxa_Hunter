@@ -226,3 +226,14 @@ If a victim must **fill a form** with attacker-chosen data, a drag-and-drop inte
 - **Run:** `/client-side`
 - **Skill:** `client-side-security`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Clickjacking on non-sensitive pages with no sensitive action — marketing, docs, a page with nothing state-changing to frame
+- "X-Frame-Options / frame-ancestors missing" reported with no working framed PoC of a sensitive action
+- Framing a page that needs typed input the attacker can't prefill (no realistic single-click exploit)
+- Login/logout clickjacking with no account impact (login-CSRF territory, usually rejected)
+- Tabnabbing / `target=_blank` without `noopener` reported as clickjacking
+- Self-only UI redress that affects only the attacker's own session
+
+**Conditionally valid (only WITH a chain):** clickjacking + a sensitive state-changing action (delete app, change email/settings, authorize OAuth) + a working PoC → Medium.

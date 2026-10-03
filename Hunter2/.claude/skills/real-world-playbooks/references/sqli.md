@@ -333,3 +333,13 @@ When a site appears to be **vulnerable to SQL injection (SQLi)** due to unusual 
 - **Run:** `vuln_scanner.sh (nuclei/ghauri/sqlmap)`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Error-based DB signature (SQL error string) with no confirmed data actually extracted from a real table
+- nuclei `info` / version match with no PoC query run against the live DB
+- Time-delay that could be network jitter — no controlled true/false boolean oracle proven
+- WAF-filtered payload that only produced a cosmetic error, no rows returned
+- sqlmap "possibly injectable" flag with nothing dumped to back it
+
+**Conditionally valid (only WITH a chain):** confirmed extraction (union/error → dump users+hashes → crack → ATO), auth-bypass SQLi at login → admin, or blind boolean/time confirmed via OOB (stacked → RCE where supported).

@@ -530,3 +530,14 @@ Other useful extensions:
 - **Run:** `fuxploider (vuln_scanner.sh) · tools/multipart_mutator.py`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Upload accepted but stored outside the webroot / never served back → no execution path, informational
+- Ability to upload/download an executable with no execution or delivery-to-victim impact (explicitly excluded by many programs)
+- Content-Type/extension mismatch accepted but the file is never rendered or interpreted → no impact
+- SVG/HTML stored-XSS that only fires in the uploader's OWN store/account (self-XSS, seller-side storefront JS is commonly excluded)
+- Missing file-size or file-type limit with no security consequence (DoS-style) → out of scope
+- EXIF metadata present in uploads / stripped-image nits → informational
+
+**Conditionally valid (only WITH a chain):** upload → webshell that actually executes (ext/MIME/magic-byte bypass → RCE), or SVG/HTML stored XSS rendered to *another* user/admin, or path-traversal filename that overwrites a sensitive file → High/Critical.

@@ -26,8 +26,10 @@ bash tools/graphql_audit.sh <url> --batch-mutation 'redeemCoupon(code:"SAVE10")'
 
 1. Confirm candidate: run the endpoint once → success; run again → fails ("already used")? → race candidate.
 2. Wave: 10-50 concurrent identical requests.
-3. All succeed → CONFIRMED. None succeed → retry with delays (0/5/15ms), 3-5 waves, then pipelining.
-4. Verify persistence: check the effect from 2 independent surfaces (wallet + orders).
+3. A concurrent success count alone is not proof. Compare against a single-request
+   baseline and stop after one bounded wave if the controlled state changes.
+4. Confirm persistence from two independent read-only surfaces and capture before/after
+   state. Report only when the effect survives and the test account can be cleaned up.
 5. `python tools/validate.py "<finding>"` → report.
 
 ## Rules

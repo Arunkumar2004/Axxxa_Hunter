@@ -188,3 +188,13 @@ e.__class__.__qualname__ = 'Polluted_Entity'
 - **Run:** `/proto-pollution · tools/prototype_pollution_scanner.py`
 - **Skill:** `client-side-security`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Pollution proven (`Object.prototype.polluted` set) but no gadget — no concrete impact demonstrated
+- Client-side PP with no DOM-XSS or security-control-bypass gadget reached
+- Server-side `__proto__` accepted but no gadget turning it into privesc / RCE / DoS
+- Scanner (ppmap / proto-pollution) "detected" flag with no observable behaviour change
+- Pollution in a library used only in dev/build, not reachable on the production request path
+
+**Conditionally valid (only WITH a chain):** client PP + gadget → DOM XSS; server PP (`__proto__` in JSON) + gadget → privesc / RCE / DoS.

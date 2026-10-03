@@ -392,3 +392,13 @@ Note that MACF doesn't really make any decisions as it just **intercepts** actio
 - **Run:** `/bypass-403`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- 403/401 bypass that lands on a page with no sensitive data or action behind it — reaching a blank/placeholder/login page is not impact
+- WAF returns 200 with a block-page body (Cloudflare challenge, F5 "request rejected", Imperva CAPTCHA) — that's a soft block, not a bypass
+- Header/path trick flips 403→200 but the body is identical to the public/unauthorized response (no new data exposed)
+- Banner / version / internal-IP disclosure surfaced by the endpoint, with no working CVE or protected function reached
+- Deny-by-design endpoints (health checks, `/server-status` still gated) that expose nothing sensitive
+
+**Conditionally valid (only WITH a chain):** bypass reaches a forbidden admin endpoint or sensitive function (BFLA) with proof the action/data is now accessible → Medium/High.

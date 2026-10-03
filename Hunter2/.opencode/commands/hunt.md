@@ -22,7 +22,11 @@ python3 tools/hunt.py --target target.com --quick
 That's it. The script:
 1. Reads `recon/<target>/` (subdomains, live hosts, URLs, gf-classified candidates).
 2. Runs `tools/vuln_scanner.sh recon/<target>/` — XSS (dalfox), SQLi (linear-scaling verifier), SSTI math-canary probes, race conditions, RCE PoC, MFA/SAML checks.
-3. Writes results to `findings/<target>/` with a `summary.txt`.
+2b. Runs a **recon freshness diff** — compares this run's subdomains/URLs against the previous snapshot and writes anything new to `recon/<target>/fresh/`. New assets have the lowest security maturity (Rule 12), so hunt those first.
+3. Runs the **extended class scanners** against the recon URL list — CORS, CRLF/host-header, XXE, CSRF, prototype pollution, HPP/postMessage, WebSocket — writing one JSON per class to `findings/<target>/extended/`. These purpose-built scanners used to be reachable only via their individual slash commands (`/cors`, `/crlf`, etc.), so a plain `/hunt` silently skipped those bug classes; they now run automatically. Disable with `--no-extended`; skip in `--quick` if you want a faster pass. Export `BBHUNT_OOB_DOMAIN` (from `/oob --listen`) beforehand and blind XXE will auto-embed the collaborator URL.
+3b. Writes the **playbook context (auto)** — every `/hunt` writes `findings/<target>/PLAYBOOKS.md`, an auto-resolved index mapping each vuln class to its playbook in `skills/real-world-playbooks/references/<class>.md`. For each lead, OPEN the matching playbook and follow its checklist + rejection rules before testing.
+3c. Runs the **two-account IDOR/BOLA harness (opt-in)** — enable with `--two-account`. Reads the operator's OWN two accounts from `.env` (`ACCOUNT_A_TOKEN`/`ACCOUNT_A_COOKIE` and `ACCOUNT_B_TOKEN`/`ACCOUNT_B_COOKIE`), replays A's requests with B's auth across recon URLs to find cross-tenant reads. Output: `findings/<target>/two_account_idor.json`; `POSSIBLE_IDOR` needs manual validation. Safe methods only unless `--two-account-unsafe`. Skips cleanly if accounts not set; never logs tokens.
+4. Writes results to `findings/<target>/` with a `summary.txt`.
 
 Output you should see (not a loop):
 
@@ -61,6 +65,9 @@ Pass `--no-banner` for piped / CI output. Pipe through `python3 tools/dashboard.
 ```
 /hunt target.com                       (full hunt — recon then scan)
 /hunt target.com --quick               (fewer checks; faster)
+/hunt target.com --no-extended         (skip CORS/CRLF/XXE/CSRF/protopoll/HPP/WS scanners)
+/hunt target.com --two-account          (two-account IDOR/BOLA — needs ACCOUNT_A_/ACCOUNT_B_ in .env)
+/hunt target.com --two-account-unsafe   (also allow state-changing methods — use with care)
 /hunt target.com --vuln-class idor     (manual deep-dive — see methodology below)
 /hunt target.com --source-code ./repo  (static + live)
 /hunt target.com --chrome              (browser-based — needs Chrome MCP)

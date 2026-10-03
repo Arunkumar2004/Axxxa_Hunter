@@ -50,6 +50,16 @@ Apply in order. First NO = KILL immediately.
 - YES: "Bug class is valid for standalone submission"
 - NO: "On never-submit list" → KILL Q7 or CHAIN REQUIRED
 
+## Supplemental Authenticated Evidence Gate
+
+For any finding produced with authentication, apply this gate after Q7. It does not
+replace the seven questions:
+
+- Record the session identity and audit-log session ID.
+- Reproduce anonymously and with the second controlled identity where applicable.
+- Confirm that the data or state is outside the testing identity's authorization.
+- Reject the finding when identity, ownership, or persistence cannot be proven.
+
 ## Never-Submit List (instant kill if no chain)
 
 ```

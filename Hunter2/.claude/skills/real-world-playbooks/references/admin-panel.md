@@ -238,3 +238,13 @@ PHP:
 - **Run:** `recon · /bypass-403 · /param-discover`
 - **Skill:** `web2-recon`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Admin panel that loads but still enforces auth (login page reachable ≠ access) — no bypass, no creds
+- "An admin can do X" — privileged-user capability is expected behavior, not a bug (Q4 KILL rule)
+- Login page found via directory fuzzing with no auth bypass, working default creds, or exposed function behind it
+- Response manipulation (403→200, false→true) that changes only the client view, not server-side access
+- Missing security headers / version banner / internal IP on the admin host with no working exploit
+
+**Conditionally valid (only WITH a chain):** unauthenticated reach to admin functionality, working default creds, or a non-admin user invoking an admin-only action (BFLA/privesc) → High/Critical.

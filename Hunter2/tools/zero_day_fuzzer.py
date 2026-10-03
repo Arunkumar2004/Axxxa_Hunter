@@ -34,31 +34,48 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FINDINGS_DIR = os.path.join(BASE_DIR, "findings")
 
 
+# os.setsid / os.killpg are POSIX-only; guard so the fuzzer runs on Windows too.
+_POSIX = hasattr(os, "setsid")
+
+
+def _kill(proc):
+    if proc is None:
+        return
+    try:
+        if _POSIX:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        else:
+            proc.kill()
+    except Exception:
+        try:
+            proc.kill()
+        except OSError:
+            pass
+    try:
+        proc.wait()
+    except OSError:
+        pass
+
+
 def run_cmd(cmd, timeout=15):
     """Run cmd (an argv list — never a shell string) without a shell."""
     proc = None
+    popen_kwargs = dict(
+        shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+    )
+    if _POSIX:
+        popen_kwargs["preexec_fn"] = os.setsid
+    elif hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
+        popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
     try:
-        proc = subprocess.Popen(
-            cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, preexec_fn=os.setsid,
-        )
+        proc = subprocess.Popen(cmd, **popen_kwargs)
         stdout, stderr = proc.communicate(timeout=timeout)
         return proc.returncode == 0, stdout, stderr
     except subprocess.TimeoutExpired:
-        if proc is not None:
-            try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-            except Exception:
-                proc.kill()
-            proc.wait()
+        _kill(proc)
         return False, "", "timeout"
     except Exception as e:
-        if proc is not None:
-            try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-            except Exception:
-                proc.kill()
-            proc.wait()
+        _kill(proc)
         return False, "", str(e)
 
 

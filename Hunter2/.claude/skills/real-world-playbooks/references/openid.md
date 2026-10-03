@@ -138,3 +138,13 @@ This checklist complements the OWASP Mobile Application Security Testing Guide; 
 - **Run:** `tools/h1_oauth_tester.py · /auth-hunt`
 - **Skill:** `auth-attacks`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- SAML metadata / signing cert exposed that the IdP publishes (no private key extracted) → informational
+- `id_token` / assertion "decodable" (by design) with no forged, accepted identity
+- SSO served over HTTP or other cosmetic misconfig with no token theft
+- Signature-bypass attempt (XSW, alg confusion, comment injection) the SP rejects — no accepted forged assertion
+- User / private-program enumeration via SAML alone with no access gained
+
+**Conditionally valid (only WITH a chain):** an `id_token`/assertion whose signature is not verified, `iss`/`aud` confusion, or an XML-signature-wrapping / SAML-response-reuse the SP actually accepts → log in as any user → ATO / auth bypass.

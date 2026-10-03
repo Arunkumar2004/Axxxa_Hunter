@@ -209,3 +209,13 @@ When looking for exposed GraphQL endpoints, include common paths in content-disc
 - **Run:** `tools/graphql_audit.sh · /graphql-audit`
 - **Skill:** `graphql-audit`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- GraphQL introspection enabled alone (no auth-bypass mutation, no IDOR on `node()` demonstrated) → informational
+- Schema/type/field enumeration or introspection dump with no sensitive data actually returned
+- "Query returns more fields than the UI shows" where none of the extra fields are actually sensitive
+- Batching/aliasing accepted but no rate-limited action abused and no DoS proven
+- Tool "GraphQL endpoint detected" `info` match with no exploited sink
+
+**Conditionally valid (only WITH a chain):** introspection + an auth-bypass mutation or IDOR on `node()` that reads/modifies another user's data (High); or mutation aliasing that actually brute-forces OTP or DoSes account recovery, proven end to end.

@@ -393,3 +393,14 @@ Use `readelf -SW ./exec | grep -E '\.got(\.plt)?'` or `objdump -h ./exec` to loc
 - **Run:** `/auth-hunt · vuln_scanner.sh`
 - **Skill:** `auth-attacks`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- MFA rate-limit with no lockout and no OTP actually accepted (e.g. 15×200 but no code matched) → informational
+- Missing rate-limit where you never demonstrated a code brute-forced to success
+- "2FA bypass" that needs the victim's already-valid session or password (compromised-account precondition)
+- Response/status tamper (`success:false`→`true`) that doesn't actually grant an authenticated session
+- SMS-flood / resource waste only (costs the company money, no bypass)
+- Clickjacking on the 2FA-disable page with no working sensitive-action PoC
+
+**Conditionally valid (only WITH a chain):** an OTP actually brute-forced to success, a blank/null-code or response-tamper that truly skips 2FA, or a login path (OAuth/legacy/`/v*/` API) where 2FA is not enforced → real account access.

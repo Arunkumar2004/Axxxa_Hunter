@@ -293,3 +293,14 @@ As explained in [**this talk**](https://www.youtube.com/watch?v=CiIyaZ3x49c), th
 - **Run:** `/auth-hunt · tools/h1_oauth_tester.py · tools/jwt_scanner.py · tools/h1_idor_scanner.py`
 - **Skill:** `auth-attacks`
 - **Coverage-matrix tier:** 0 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Pre-account takeover with no proof the specific conditions are met (unverified-email linking → later full control) — "usually" invalid
+- "Session not invalidated on logout" / concurrent sessions / long session expiry alone — no takeover demonstrated
+- Open redirect, host-header injection, or referrer leak on the reset flow WITHOUT capturing another user's token
+- Rate-limit-only on login/reset (behind Cloudflare, no OTP/token actually cracked) — brute force never succeeded
+- Password-reset token seen only in your own response/self session, never used cross-account
+- Username/email enumeration alone (no account compromise)
+
+**Conditionally valid (only WITH a chain):** reset-token leak/predict, email-change IDOR, or OAuth code/token theft that lets you set another user's password or log into their account → Critical.

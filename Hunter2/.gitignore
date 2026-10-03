@@ -41,3 +41,7 @@ nmap-output/
 # install_tools, NOT committed). caido-mcp-server.exe stays tracked.
 tools/bin/*
 !tools/bin/caido-mcp-server.exe
+.tmp/
+memory/leads/
+.playwright-browsers/
+.venv-pw/

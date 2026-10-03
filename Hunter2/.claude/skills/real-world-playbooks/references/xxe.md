@@ -158,3 +158,13 @@ In this attack I'm going to test if a simple new ENTITY declaration is working
 - **Run:** `/xxe · tools/xxe_scanner.py`
 - **Skill:** `web2-vuln-classes`
 - **Coverage-matrix tier:** 1 (Tier 0 = test first)
+
+## What gets this rejected (kill before you write)
+*(from the toolkit NEVER-SUBMIT list — match one of these with no chain → KILL IT)*
+- Blind XXE OOB callback that only produced a DNS ping — no file/data actually exfiltrated
+- "New entity" reflection that echoes your string but reads no file (`&example;` is a literal, not `file://`)
+- Parser accepts a DOCTYPE but external entities are disabled — no `/etc/passwd` or internal fetch returned
+- Billion-laughs/entity-expansion DoS payload with no availability impact shown (and DoS is often out of scope)
+- XXE on a third-party / out-of-scope XML endpoint
+
+**Conditionally valid (only WITH a chain):** XXE → file read (/etc/passwd, config secrets); XXE → SSRF → cloud metadata → creds; blind XXE → OOB exfil via external DTD with data returned.

@@ -1,5 +1,5 @@
 ---
-description: Write a submission-ready bug bounty report. Generates H1/Bugcrowd/Intigriti/Immunefi format with CVSS 3.1 score, proof of concept, impact statement, and remediation. Run /validate first. Usage: /report
+description: Write a submission-ready bug bounty report. Generates H1/Bugcrowd/Intigriti/Immunefi format with CVSS 4.0 score, proof of concept, impact statement, and remediation. Run /validate first. Usage: /report
 ---
 
 # /report
@@ -9,6 +9,8 @@ Generate a submission-ready bug bounty report.
 ## Pre-Conditions
 
 Run `/validate` first. All 4 gates must pass before running this command.
+For a completed hunt, also review `memory/coverage/<target>.json`; reachable `PENDING`
+or `BLOCKED` classes must be resolved or explicitly explained before submission.
 
 Never write a report before validating. N/A submissions hurt your validity ratio.
 
@@ -31,11 +33,13 @@ Provide when prompted:
 
 1. Title following the formula: `[Bug Class] in [Endpoint] allows [actor] to [impact]`
 2. Summary paragraph (impact-first, no "could potentially")
-3. Vulnerability details with CVSS 3.1 score and vector string
+3. Vulnerability details with CVSS 4.0 score and vector string
 4. Steps to Reproduce with copy-paste HTTP requests
 5. Impact statement with quantification
 6. Recommended fix (1-2 sentences, specific)
 7. Supporting materials section
+8. Coverage matrix summary with `FOUND`, `TESTED`, `N/A`, `BLOCKED`, and `PENDING`
+   statuses, including reasons and links to finding evidence
 
 ## Persistence Rule
 
@@ -63,7 +67,7 @@ to a validated finding.
 
 ### HackerOne Format
 - Markdown sections: Summary, Vulnerability Details, Steps to Reproduce, Impact, Recommended Fix
-- Include CVSS 3.1 score + vector string
+- Include CVSS 4.0 score + vector string
 - Include two test account setup instructions
 - Keep under 600 words
 
