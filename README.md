@@ -135,47 +135,66 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 ## 1. Prerequisites
 
-- **Python 3.10+** — <https://www.python.org/downloads/>
+- **Python 3.10+** — <https://www.python.org/downloads/>  (on Windows the launcher is `py`; on macOS/Linux use `python3`)
 - **An agent CLI**, either:
-  - **[OpenCode](https://opencode.ai)** — recommended, fully agentic (default agent `hunter`)
+  - **[OpenCode](https://opencode.ai)** — fully agentic (default agent `hunter`)
   - **[Claude Code](https://claude.com/claude-code)**
-- **Git** (for cloning + a few git-based tools)
+- **Git**, and **Go** (needed to build the ProjectDiscovery recon binaries; or download their prebuilt releases)
 - **(Optional) external security tools** — installed on demand; anything missing is skipped, never fatal.
 
 ---
 
-## 2. Setup
+## 2. Setup (fresh clone → ready to hunt)
+
+> Windows uses `py`; macOS/Linux use `python3`. Commands below show `py` — swap as needed.
 
 ```bash
-# 1. Get the code
-git clone <your-hunter2-repo> && cd Hunter2
+# 1. Clone and enter the tool folder
+git clone https://github.com/Arunkumar2004/Axxxa_Hunter.git
+cd Axxxa_Hunter/Hunter2
 
-# 2. Python deps
-pip install -r requirements.txt
+# 2. Python deps + the headless browser (DOM XSS / login capture)
+py -m pip install -r requirements.txt playwright
+py -m playwright install chromium
 
-# 3. Install the hunting toolchain by profile (start with core)
-python tools/arsenal.py install --profile core --yes
+# 3. Install the recon/hunting binaries (subfinder, httpx, nuclei, katana, dnsx, naabu, …)
+py tools/arsenal.py install --profile recon --yes
 #    profiles: core | recon | web | api | cloud | secrets | mobile | web3 | all
-#    Windows: .\install_tools.ps1 -Profile core
+#    Windows alt: .\install_tools.ps1 -Profile recon
+#    (needs Go on PATH; or grab each tool's prebuilt .exe from its GitHub releases)
 
-# 4. (optional) check what's installed
-python tools/arsenal.py status
+# 4. Confirm what's armed
+py tools/arsenal.py status
 ```
 
-Nothing else to configure to start — skills, commands, agents, and MCP config all
+Nothing else to configure — skills, commands, agents, playbooks, and MCP config all
 load from this folder.
+
+**Optional — MCP servers** (Caido, Burp, HackerOne, Shodan, browser): they are declared in
+`.mcp.json` but load **only after you restart the agent CLI and approve them**. They're
+optional extras — the hunt runs fully without them.
+
+### Quick start
+```bash
+py tools/start.py <target>        # connection board — shows what's armed, then you hunt
+```
+Then, in your agent CLI, just say **`hunt <target>`**.
 
 ### OpenCode
 ```bash
-opencode          # run inside the Hunter2 folder — the "hunter" agent loads automatically
+opencode          # run inside Hunter2/ — the "hunter" agent + AGENTS.md load automatically
 ```
 
 ### Claude Code
 ```bash
-claude            # run inside the folder; commands live in commands/, settings in .claude/settings.json
+claude            # run inside Hunter2/ — CLAUDE.md + commands/ + .claude/settings.json load automatically
 ```
 
-Both CLIs share the same commands, agents, and skills.
+Both CLIs share the same engine, commands, agents, skills, and playbooks — identical behavior.
+On every hunt the agent reads its contract (`CLAUDE.md` / `AGENTS.md`) and runs
+`tools/start.py <target>` (the connection board) **first**, then hunts. Full how-to:
+[`docs/HUNT_RUNBOOK.md`](Hunter2/docs/HUNT_RUNBOOK.md) · what it tests per class:
+[`docs/HOW_IT_HUNTS.md`](Hunter2/docs/HOW_IT_HUNTS.md).
 
 ---
 
