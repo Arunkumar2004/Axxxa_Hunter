@@ -12,6 +12,8 @@
 
 set -uo pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/external_arsenal.sh"
 
@@ -51,7 +53,7 @@ if _have arjun; then
     arjun -i "$LIST" -t 10 -oJ "$OUT_DIR/arjun.json" 2>/dev/null || true
   fi
   if [ -s "$OUT_DIR/arjun.json" ]; then
-    python3 -c "
+    "$PY" -c "
 import json
 d = json.load(open('$OUT_DIR/arjun.json'))
 for ep, info in d.items():

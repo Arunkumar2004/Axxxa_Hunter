@@ -15,6 +15,8 @@
 
 set -o pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 # ── Colours ──────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -114,7 +116,7 @@ unsafe_method_guard() {
     local label="$3"
     local guard_output decision reason
 
-    guard_output=$(PYTHONPATH="$BASE_DIR${PYTHONPATH:+:$PYTHONPATH}" python3 - "$method" "$url" <<'PY'
+    guard_output=$(PYTHONPATH="$BASE_DIR${PYTHONPATH:+:$PYTHONPATH}" "$PY" - "$method" "$url" <<'PY'
 import sys
 from memory.audit_log import SafeMethodPolicy
 
@@ -210,7 +212,7 @@ verify_upload_poc() {
         fux="fuxploider"
     else
         for c in "$HOME/.local/share/bug-bounty/web/fuxploider/fuxploider.py"                  "$HOME/.tools/fuxploider/fuxploider.py"                  "$HOME/fuxploider/fuxploider.py"; do
-            [ -f "$c" ] && { fux="python3 $c"; break; }
+            [ -f "$c" ] && { fux="$PY $c"; break; }
         done
     fi
     if [ -n "$fux" ]; then
@@ -343,7 +345,7 @@ if ! skip_has xss; then
         # Deduplicate by base-URL + sorted param keys to avoid scanning the same
         # endpoint N times with different random values (e.g. ?rand=1.234 variants)
         DAL_DEDUP_FILE=$(mktemp /tmp/dalfox_dedup_XXXXXX.txt)
-        python3 - "$PARAMS_FILE" "$DAL_DEDUP_FILE" <<'PYEOF' 2>/dev/null || cp "$PARAMS_FILE" "$DAL_DEDUP_FILE"
+        "$PY" - "$PARAMS_FILE" "$DAL_DEDUP_FILE" <<'PYEOF' 2>/dev/null || cp "$PARAMS_FILE" "$DAL_DEDUP_FILE"
 import sys
 from urllib.parse import urlparse, parse_qs
 seen = set()
@@ -430,7 +432,7 @@ if ! skip_has ssti; then
             for idx in "${!SSTI_ENGINES[@]}"; do
                 engine="${SSTI_ENGINES[$idx]}"
                 payload="${SSTI_PAYLOADS[$idx]}"
-                enc_payload=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$payload'''))" 2>/dev/null || echo "$payload")
+                enc_payload=$("$PY" -c "import urllib.parse; print(urllib.parse.quote('''$payload'''))" 2>/dev/null || echo "$payload")
                 injected=$(echo "$url" | sed "s/=\([^&]*\)/=${enc_payload}/g")
                 body=$(curl -sk --max-time 10 ${BB_AUTH_ARGS[@]+"${BB_AUTH_ARGS[@]}"} "$injected" 2>/dev/null || true)
                 if echo "$body" | grep -qE '(\b49\b|7777777)'; then
@@ -633,7 +635,7 @@ INFO_MFA_MANIP=$(grep -c "\[INFORMATIONAL\].*MFA-RESPONSE-MANIP" "$FINDINGS_DIR/
 } > "$FINDINGS_DIR/summary.txt"
 cat "$FINDINGS_DIR/summary.txt"
 
-python3 - "$FINDINGS_DIR" "$TARGET" \
+"$PY" - "$FINDINGS_DIR" "$TARGET" \
     "$CONF_SQLI" "$CONF_RCE" "$CONF_SSTI" "$CONF_SAML" \
     "$POSS_SQLI" "$POSS_XSS" "$POSS_MFA_RATE" "$POSS_UPLOAD" "$POSS_MFA_SKIP" \
     "$INFO_UPLOAD" "$INFO_SAML_ENDPOINTS" "$INFO_SAML_META" "$INFO_CMS" "$INFO_MFA_MANIP" <<'PY'

@@ -155,6 +155,16 @@ def ledger_path(target):
     return os.path.join(LEADS_DIR, re.sub(r"[^\w.-]", "_", target) + ".jsonl")
 
 
+def list_targets():
+    """Known targets (ledger basenames), most-recently-modified first."""
+    try:
+        files = glob.glob(os.path.join(LEADS_DIR, "*.jsonl"))
+    except OSError:
+        return []
+    files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+    return [os.path.splitext(os.path.basename(p))[0] for p in files]
+
+
 def load_ledger(target):
     p = ledger_path(target)
     leads = []
@@ -398,7 +408,7 @@ def main():
     ap = argparse.ArgumentParser(description="Lead Board — persistent recon->skill lead ledger")
     sub = ap.add_subparsers(dest="cmd", required=True)
     pi = sub.add_parser("ingest"); pi.add_argument("target"); pi.add_argument("--recon-dir", default=None)
-    ps = sub.add_parser("show"); ps.add_argument("target")
+    ps = sub.add_parser("show"); ps.add_argument("target", nargs="?", default=None)
     ps.add_argument("--all", action="store_true"); ps.add_argument("--new", action="store_true")
     ps.add_argument("--stale", action="store_true")
     pn = sub.add_parser("next"); pn.add_argument("target")
@@ -423,8 +433,21 @@ def main():
             return 2
         ingest(args.target, rd)
     elif args.cmd == "show":
+        target = args.target
+        if not target:
+            targets = list_targets()
+            if not targets:
+                print("[!] no leads yet. Run: lead_board.py ingest <target>")
+                return 2
+            if len(targets) > 1:
+                print("[!] multiple targets — pass one:  lead_board.py show <target>")
+                for t in targets:
+                    print(f"    {t}")
+                return 2
+            target = targets[0]
+            print(f"[*] defaulting to only target: {target}")
         mode = "stale" if args.stale else "new" if args.new else "all" if args.all else None
-        show(args.target, mode)
+        show(target, mode)
     elif args.cmd == "next":
         show_next(args.target)
     elif args.cmd == "touch":

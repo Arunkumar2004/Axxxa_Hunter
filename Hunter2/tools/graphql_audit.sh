@@ -17,6 +17,8 @@
 
 set -uo pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/external_arsenal.sh"
 
@@ -110,12 +112,12 @@ INTROSPECT_OUT="$OUT_DIR/introspection.json"
 
 if echo "$INTROSPECT_RESP" | grep -q '"__schema"'; then
   hit "Introspection ENABLED -- schema dumped to introspection.json"
-  echo "$INTROSPECT_RESP" | python3 -m json.tool > "$INTROSPECT_OUT" 2>/dev/null \
+  echo "$INTROSPECT_RESP" | "$PY" -m json.tool > "$INTROSPECT_OUT" 2>/dev/null \
     || echo "$INTROSPECT_RESP" > "$INTROSPECT_OUT"
   echo "introspection: ENABLED" >> "$SUMMARY"
 
   # Extract interesting type/field names
-  INTERESTING=$(echo "$INTROSPECT_RESP" | python3 -c "
+  INTERESTING=$(echo "$INTROSPECT_RESP" | "$PY" -c "
 import sys, json, re
 try:
     data = json.load(sys.stdin)
@@ -166,8 +168,8 @@ fi
 log "Phase 2 -- engine fingerprinting"
 FINGER_OUT="$OUT_DIR/fingerprint.txt"
 
-if python3 -c "import graphw00f" 2>/dev/null; then
-  python3 -m graphw00f.main -d -t "$URL" \
+if "$PY" -c "import graphw00f" 2>/dev/null; then
+  "$PY" -m graphw00f.main -d -t "$URL" \
     ${PROXY:+--proxy "$PROXY"} 2>&1 | tee "$FINGER_OUT"
   echo "fingerprint: see fingerprint.txt" >> "$SUMMARY"
 else
@@ -182,11 +184,11 @@ fi
 log "Phase 3 -- field discovery (clairvoyance)"
 CLAIRVOYANCE_OUT="$OUT_DIR/field_suggestions.json"
 
-if python3 -c "import clairvoyance" 2>/dev/null; then
+if "$PY" -c "import clairvoyance" 2>/dev/null; then
   CLAIRVOYANCE_ARGS=(-u "$URL" -o "$CLAIRVOYANCE_OUT")
   [ -n "$AUTH_HEADER" ] && CLAIRVOYANCE_ARGS+=(-H "$AUTH_HEADER")
   [ -n "$PROXY" ]       && CLAIRVOYANCE_ARGS+=(--proxy "$PROXY")
-  python3 -m clairvoyance "${CLAIRVOYANCE_ARGS[@]}" 2>&1 | tail -20
+  "$PY" -m clairvoyance "${CLAIRVOYANCE_ARGS[@]}" 2>&1 | tail -20
   ok "Clairvoyance output: $CLAIRVOYANCE_OUT"
   echo "clairvoyance: completed" >> "$SUMMARY"
 else
@@ -206,7 +208,7 @@ T_SINGLE=$(curl "${CURL_ARGS[@]}" -X POST "$URL" \
   -d '{"query":"{ __typename }"}' \
   -o /dev/null -w '%{time_total}' 2>/dev/null)
 
-BATCH_PAYLOAD=$(python3 -c "import json; print(json.dumps([{'query':'{ __typename }'}]*100))")
+BATCH_PAYLOAD=$("$PY" -c "import json; print(json.dumps([{'query':'{ __typename }'}]*100))")
 BATCH_STATUS=$(curl "${CURL_ARGS[@]}" -X POST "$URL" \
   -H 'Content-Type: application/json' \
   -d "$BATCH_PAYLOAD" \
@@ -229,7 +231,7 @@ fi
 
 # Alias bomb (500 aliases)
 log "Testing alias bombing..."
-ALIAS_PAYLOAD=$(python3 -c "
+ALIAS_PAYLOAD=$("$PY" -c "
 aliases = ' '.join(f'q{i}: __typename' for i in range(500))
 import json; print(json.dumps({'query': '{ ' + aliases + ' }'}))
 ")
@@ -298,7 +300,7 @@ fi
 log "Phase 7 -- depth limit probe"
 DEPTH_OUT="$OUT_DIR/depth_bomb.txt"
 
-DEPTH_QUERY=$(python3 -c "
+DEPTH_QUERY=$("$PY" -c "
 depth = 15
 inner = 'id'
 for _ in range(depth):

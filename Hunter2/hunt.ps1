@@ -7,9 +7,13 @@ param(
     [switch]$ScanOnly
 )
 
-$py = (Get-Command python -ErrorAction SilentlyContinue) ?? (Get-Command python3 -ErrorAction SilentlyContinue)
+$py = $null
+foreach ($c in 'python','python3','py') {
+    $cmd = Get-Command $c -ErrorAction SilentlyContinue
+    if ($cmd) { $py = $cmd.Source; break }
+}
 if (-not $py) {
-    Write-Host "ERROR: python not found."
+    Write-Host "ERROR: python not found (python/python3/py)."
     exit 1
 }
 
@@ -18,5 +22,5 @@ if ($Quick) { $args += "--quick" }
 if ($ScanOnly) { $args += "--scan-only" }
 
 Write-Host "[*] Hunting $Target ..."
-& $py.Source @args
+& $py @args
 exit $LASTEXITCODE

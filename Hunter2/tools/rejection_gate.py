@@ -308,12 +308,21 @@ def check_finding(finding: dict) -> dict:
     else:
         verdict = "PASSES"
 
-    return {
+    out = {
         "verdict": verdict,
         "matched_rules": matched_rules,
         "reasons": reasons,
         "chain_savers": chain_savers,
     }
+    if verdict == "PASSES":
+        # CRITICAL: this gate only pattern-matches the finding's TEXT — it cannot see
+        # app behaviour. PASSES means "not on the always-rejected list", NOT "confirmed".
+        # It passed a fabricated CSRF once because the description looked valid. Never
+        # treat PASSES as validation; it is only a floor before manual proof.
+        out["validated"] = False
+        out["note"] = ("NOT VALIDATED — gate checks text only, not the app. Prove it "
+                       "manually (control request / real PoC) before trusting this.")
+    return out
 
 
 # ─── CLI ────────────────────────────────────────────────────────────────────────
@@ -351,7 +360,9 @@ def _print_human(finding: dict, result: dict) -> None:
         for saver in result["chain_savers"]:
             print(f"    -> {saver}")
     if verdict == "PASSES":
-        print("  Nothing matched the never-submit list - worth validating / reporting.")
+        print("  NOT-REJECTED (text only) — this is NOT validation. The gate cannot see")
+        print("  app behaviour; it once passed a fabricated CSRF. Prove it manually with a")
+        print("  control request / real PoC before trusting or reporting it.")
     elif verdict == "NEEDS_CHAIN":
         print("  Not submittable as-is - build and prove the chain first, then re-check.")
     else:

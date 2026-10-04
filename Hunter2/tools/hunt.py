@@ -415,6 +415,9 @@ def run_recon(domain, quick=False, scope_lock=False, max_urls=None):
         proc.kill()
         log("err", f"Recon timed out for {domain}")
         return False
+    except Exception as e:  # noqa: BLE001 - launch failure must not abort the hunt
+        log("warn", f"Recon failed to launch for {domain}: {type(e).__name__}: {e}")
+        return False
 
 
 def check_cicd_results(domain):
@@ -426,8 +429,12 @@ def check_cicd_results(domain):
         for f in files:
             if f == "summary.txt":
                 summary_path = os.path.join(root, f)
-                with open(summary_path) as sf:
-                    content = sf.read()
+                try:
+                    with open(summary_path) as sf:
+                        content = sf.read()
+                except OSError as e:
+                    log("warn", f"Could not read CI/CD summary {summary_path}: {e}")
+                    continue
                 if "Total findings: 0" not in content:
                     log("warn", f"CI/CD findings detected — review: {summary_path}")
 
@@ -763,32 +770,38 @@ def run_playbook_context(domain):
         "open-redirect", "graphql", "prototype-pollution", "subdomain-takeover",
         "path-traversal-lfi", "request-smuggling", "web-cache", "secrets-leak",
     ]
-    out_dir = os.path.join(FINDINGS_DIR, domain)
-    os.makedirs(out_dir, exist_ok=True)
-    out_file = os.path.join(out_dir, "PLAYBOOKS.md")
+    # Wrap the whole body: one bad playbook, an unwritable dir, or a failed
+    # write must stay non-fatal and never abort the hunt.
+    try:
+        out_dir = os.path.join(FINDINGS_DIR, domain)
+        os.makedirs(out_dir, exist_ok=True)
+        out_file = os.path.join(out_dir, "PLAYBOOKS.md")
 
-    lines = [
-        f"# Playbooks for {domain}",
-        "",
-        "Auto-resolved by playbook_router. For each lead, OPEN the matching file and "
-        "follow its checklist + rejection rules before testing.",
-        "",
-        "| Class | Playbook | Checklist items | Rejection rules |",
-        "|---|---|---|---|",
-    ]
-    resolved = 0
-    for c in classes:
-        pb = load_playbook(c)
-        if not pb:
-            continue
-        resolved += 1
-        rel = os.path.relpath(pb["path"], BASE_DIR)
-        lines.append(
-            f"| {c} | `{rel}` | {len(pb.get('checklist', []))} | "
-            f"{len(pb.get('rejection_rules', []))} |"
-        )
-    with open(out_file, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines) + "\n")
+        lines = [
+            f"# Playbooks for {domain}",
+            "",
+            "Auto-resolved by playbook_router. For each lead, OPEN the matching file and "
+            "follow its checklist + rejection rules before testing.",
+            "",
+            "| Class | Playbook | Checklist items | Rejection rules |",
+            "|---|---|---|---|",
+        ]
+        resolved = 0
+        for c in classes:
+            pb = load_playbook(c)
+            if not pb:
+                continue
+            resolved += 1
+            rel = os.path.relpath(pb["path"], BASE_DIR)
+            lines.append(
+                f"| {c} | `{rel}` | {len(pb.get('checklist', []))} | "
+                f"{len(pb.get('rejection_rules', []))} |"
+            )
+        with open(out_file, "w", encoding="utf-8") as fh:
+            fh.write("\n".join(lines) + "\n")
+    except Exception as e:  # noqa: BLE001 - non-fatal; a bad playbook/dir can't abort the hunt
+        log("warn", f"Playbook context skipped: {type(e).__name__}: {e}")
+        return False
     log("ok", f"Playbook context: {resolved} class playbooks indexed → {out_file}")
     return True
 
@@ -909,6 +922,9 @@ def run_vuln_scan(domain, quick=False, full=False):
     except subprocess.TimeoutExpired:
         proc.kill()
         log("err", f"Vulnerability scan timed out for {domain}")
+        return False
+    except Exception as e:  # noqa: BLE001 - launch failure must not abort the hunt
+        log("warn", f"Vulnerability scan failed to launch for {domain}: {type(e).__name__}: {e}")
         return False
 
 

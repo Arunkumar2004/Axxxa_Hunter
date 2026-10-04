@@ -64,10 +64,29 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
         return None  # never auto-follow; safe_urlopen drives redirects itself
 
 
-def safe_urlopen(req: urllib.request.Request, timeout: float = 10, max_redirects: int = 5, **kwargs):
+def safe_urlopen(
+    req: urllib.request.Request,
+    timeout: float = 10,
+    max_redirects: int = 5,
+    allowed_hosts: "set | None" = None,
+    scope_check: "callable | None" = None,
+    **kwargs,
+):
     """Like urllib.request.urlopen(req), but validates every redirect hop's
     hostname before following it, rejecting private/loopback/link-local/
     metadata addresses.
+
+    Optional program-scope enforcement on redirects (both default None, which
+    leaves behavior exactly as before — existing callers are unaffected):
+
+    * ``allowed_hosts``: an iterable of in-scope hostnames. When given, a
+      redirect whose destination host is not in this set is rejected (stopping
+      the chain) the same way the SSRF guard rejects a blocked host. This closes
+      the gap where an in-scope target could 302 the scanner to an arbitrary
+      out-of-scope PUBLIC host.
+    * ``scope_check``: a callable ``hostname -> bool`` returning True when the
+      destination is in scope. Applied in addition to ``allowed_hosts`` when
+      both are supplied.
 
     Extra keyword arguments are forwarded to the underlying opener on
     every hop, so callers that pass a custom SSL context to urlopen()
@@ -75,6 +94,10 @@ def safe_urlopen(req: urllib.request.Request, timeout: float = 10, max_redirects
     specially by _one_hop: OpenerDirector.open() doesn't accept a
     context= kwarg the way module-level urlopen() does, so it's bound to
     an HTTPSHandler on the opener instead of being forwarded as-is."""
+    normalized_allowed = None
+    if allowed_hosts is not None:
+        normalized_allowed = {str(h).lower().rstrip(".") for h in allowed_hosts}
+
     current = req
     for _ in range(max_redirects + 1):
         resp = _one_hop(current, timeout, **kwargs)
@@ -88,6 +111,17 @@ def safe_urlopen(req: urllib.request.Request, timeout: float = 10, max_redirects
         if _is_blocked_redirect_target(hostname):
             raise urllib.error.URLError(
                 f"blocked redirect to disallowed host (SSRF guard): {hostname!r}"
+            )
+        # Optional program-scope enforcement: stop following a redirect that
+        # leaves the allowed scope, even to an otherwise-public host.
+        normalized_host = (hostname or "").lower().rstrip(".")
+        if normalized_allowed is not None and normalized_host not in normalized_allowed:
+            raise urllib.error.URLError(
+                f"blocked redirect to out-of-scope host (scope guard): {hostname!r}"
+            )
+        if scope_check is not None and not scope_check(hostname):
+            raise urllib.error.URLError(
+                f"blocked redirect to out-of-scope host (scope guard): {hostname!r}"
             )
         preserve_body = resp.status in (307, 308)
         current_host = (urlparse(current.full_url).hostname or "").lower().rstrip(".")

@@ -229,7 +229,15 @@ def main() -> int:
     parser.add_argument(
         "--no-color", action="store_true", help="Disable emoji/color in output"
     )
+    parser.add_argument(
+        "tech_pos", nargs="?", metavar="tech",
+        help="Positional product or product=version string — same as --tech",
+    )
     args = parser.parse_args()
+
+    # A bare positional target behaves like --tech.
+    if args.tech_pos and not args.tech:
+        args.tech = args.tech_pos
 
     if args.list_products:
         print("Known product slugs (endoflife.date):")

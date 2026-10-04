@@ -17,6 +17,8 @@
 
 set -uo pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/external_arsenal.sh"
 
@@ -80,7 +82,7 @@ _run_gitleaks() {
   gitleaks "$subcmd" --source "$target" --report-format json --report-path "$OUT_DIR/gitleaks.json" --redact \
     >/dev/null 2>&1 || true
   if [ -s "$OUT_DIR/gitleaks.json" ]; then
-    local n; n=$(python3 -c "import json; print(len(json.load(open('$OUT_DIR/gitleaks.json'))))" 2>/dev/null || echo 0)
+    local n; n=$("$PY" -c "import json; print(len(json.load(open('$OUT_DIR/gitleaks.json'))))" 2>/dev/null || echo 0)
     [ "$n" -gt 0 ] && hit "gitleaks: $n leak(s)" || ok "gitleaks: clean"
   fi
 }

@@ -17,6 +17,8 @@
 
 set -uo pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/external_arsenal.sh"
 
@@ -78,7 +80,7 @@ nuclei "${INPUT_ARG[@]}" \
 if [ -s "$OUT_DIR/nuclei_cve.jsonl" ]; then
   n=$(wc -l < "$OUT_DIR/nuclei_cve.jsonl" | tr -d ' ')
   hit "nuclei: $n CVE finding(s)"
-  python3 -c "
+  "$PY" -c "
 import json
 seen=set()
 for line in open('$OUT_DIR/nuclei_cve.jsonl'):

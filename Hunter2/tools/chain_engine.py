@@ -195,13 +195,16 @@ def sibling_endpoints(url: str) -> list[str]:
             base = path if path.endswith("/") else path + "/"
             variant_paths.append(base + suffix)
 
-    # 2) Version markers — swap each detected marker for others in its family.
-    for marker in VERSION_MARKERS:
-        if marker in path:
-            family = _version_family(marker)
-            for other in VERSION_MARKERS:
-                if other != marker and _version_family(other) == family:
-                    variant_paths.append(path.replace(marker, other))
+    # 2) Version markers — swap a detected /vN segment for its siblings. The
+    #    lookahead makes the trailing slash optional, so a version-terminal path
+    #    (…/api/v1) is covered as well as a non-terminal one (…/api/v1/users).
+    vmatch = re.search(r"/v(\d+)(?=/|$)", path)
+    if vmatch:
+        current = vmatch.group(1)
+        for other in ("1", "2", "3"):
+            if other != current:
+                swapped = path[:vmatch.start()] + "/v" + other + path[vmatch.end():]
+                variant_paths.append(swapped)
 
     # Reconstruct, exclude the original, dedupe (order-preserving).
     result: list[str] = []

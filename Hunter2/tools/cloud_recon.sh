@@ -15,6 +15,8 @@
 
 set -uo pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/external_arsenal.sh"
 
@@ -78,7 +80,7 @@ if [ -n "$CF_TARGET" ]; then
     warn "CloudFail not installed — falling back to crt.sh + DNS history dig"
     log "Pulling crt.sh subdomains for $CF_TARGET..."
     curl -s "https://crt.sh/?q=%25.$CF_TARGET&output=json" 2>/dev/null \
-      | python3 -c "
+      | "$PY" -c "
 import json, sys
 try:
     d = json.load(sys.stdin)

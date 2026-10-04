@@ -12,35 +12,39 @@ param(
     [Parameter(ValueFromRemainingArguments = $true)][string[]]$Args
 )
 
-$py = (Get-Command python -ErrorAction SilentlyContinue) ?? (Get-Command python3 -ErrorAction SilentlyContinue)
-if (-not $py) { Write-Host "ERROR: python not found."; exit 1 }
+$py = $null
+foreach ($c in 'python','python3','py') {
+    $cmd = Get-Command $c -ErrorAction SilentlyContinue
+    if ($cmd) { $py = $cmd.Source; break }
+}
+if (-not $py) { Write-Host "ERROR: python not found (python/python3/py)."; exit 1 }
 
 switch ($Command) {
     "recon" {
         if (-not $Args) { Write-Host "Usage: .\bughunter.ps1 recon <target>"; exit 1 }
-        & $py.Source "tools\hunt.py" "--target" $Args[0] "--recon-only"
+        & $py "tools\hunt.py" "--target" $Args[0] "--recon-only"
     }
     "hunt" {
         if (-not $Args) { Write-Host "Usage: .\bughunter.ps1 hunt <target> [--quick] [--scan-only]"; exit 1 }
         $t = $Args[0]; $extra = @()
         foreach ($a in $Args[1..($Args.Count-1)]) { $extra += $a }
-        & $py.Source "tools\hunt.py" "--target" $t @extra
+        & $py "tools\hunt.py" "--target" $t @extra
     }
     "validate" {
         $finding = ($Args -join " ")
         if (-not $finding) { Write-Host "Usage: .\bughunter.ps1 validate <finding>"; exit 1 }
-        & $py.Source "tools\validate.py" $finding
+        & $py "tools\validate.py" $finding
     }
     "scope" {
         if (-not $Args) { Write-Host "Usage: .\bughunter.ps1 scope <asset>"; exit 1 }
-        & $py.Source "tools\scope_checker.py" $Args[0]
+        & $py "tools\scope_checker.py" $Args[0]
     }
     "leads" {
         if (-not $Args) { $Args = @("show") }
-        & $py.Source "tools\lead_board.py" $Args[0] $Args[1..($Args.Count-1)]
+        & $py "tools\lead_board.py" $Args[0] $Args[1..($Args.Count-1)]
     }
     "report" {
-        & $py.Source "tools\lead_board.py" show
+        & $py "tools\lead_board.py" show
         Write-Host "`nReport drafting uses the report-writing skill / commands\report.md"
     }
     "arsenal" {

@@ -9,6 +9,8 @@
 
 set -e
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 # ─── SET THESE BEFORE RUNNING ────────────────────────────────────────────────
 TOKEN_A=""          # Account A Bearer token (resource owner — your main account)
 TOKEN_B=""          # Account B Bearer token (attacker — second account)
@@ -50,7 +52,7 @@ if [[ -z "$USER_ID" ]]; then
     -H "Content-Type: application/json" \
     https://hackerone.com/graphql \
     -d '{"query":"{ me { id databaseId } }"}' \
-    | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('me',{}).get('databaseId',''))" 2>/dev/null)
+    | "$PY" -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('me',{}).get('databaseId',''))" 2>/dev/null)
   echo "  Account A user ID: $USER_ID"
 fi
 
@@ -63,7 +65,7 @@ curl -s \
   -H "Content-Type: application/json" \
   https://hackerone.com/graphql \
   -d '{"query":"{ __type(name: \"Mutation\") { fields { name args { name type { name kind } } } } }"}' \
-  | python3 -c "
+  | "$PY" -c "
 import sys, json
 d = json.load(sys.stdin)
 fields = d.get('data', {}).get('__type', {}).get('fields', [])
@@ -80,7 +82,7 @@ curl -s \
   -H "Content-Type: application/json" \
   https://hackerone.com/graphql \
   -d '{"query":"{ __type(name: \"Query\") { fields { name } } }"}' \
-  | python3 -c "
+  | "$PY" -c "
 import sys, json
 d = json.load(sys.stdin)
 fields = d.get('data', {}).get('__type', {}).get('fields', [])
@@ -94,7 +96,7 @@ sleep 2
 echo ""
 echo "══ PHASE 2: Cross-User IDOR Scanner ══"
 echo ""
-CMD=(python3 "$TOOLS_DIR/h1_idor_scanner.py" \
+CMD=("$PY" "$TOOLS_DIR/h1_idor_scanner.py" \
   --token-a "$TOKEN_A" \
   --token-b "$TOKEN_B")
 
@@ -111,7 +113,7 @@ sleep 2
 echo ""
 echo "══ PHASE 3: Auth / OAuth Checks ══"
 echo ""
-python3 "$TOOLS_DIR/h1_oauth_tester.py" \
+"$PY" "$TOOLS_DIR/h1_oauth_tester.py" \
   --check-cors \
   --check-oauth \
   --check-ssrf \
@@ -120,7 +122,7 @@ python3 "$TOOLS_DIR/h1_oauth_tester.py" \
 if [[ -n "$EMAIL_A" ]]; then
   echo ""
   echo "  [Password Reset Test] email=$EMAIL_A"
-  python3 "$TOOLS_DIR/h1_oauth_tester.py" \
+  "$PY" "$TOOLS_DIR/h1_oauth_tester.py" \
     --check-reset \
     --email "$EMAIL_A" \
     2>&1 | tee -a "$LOG"
@@ -134,7 +136,7 @@ echo ""
 
 # Negative bounty test (safe — doesn't actually award, tests validation)
 if [[ -n "$REPORT_ID" ]]; then
-  python3 "$TOOLS_DIR/h1_race.py" \
+  "$PY" "$TOOLS_DIR/h1_race.py" \
     --token-a "$TOKEN_A" \
     --test negative-bounty \
     --report-id "$REPORT_ID" \
@@ -151,7 +153,7 @@ echo "MANUAL TESTS STILL REQUIRED:"
 echo "  [ ] Hai AI — test IDOR via chat (Day 17) — must be done in browser"
 echo "  [ ] GitHub OAuth redirect_uri — browser + Burp (Day 9)"
 echo "  [ ] SSRF webhook — sandbox program integration settings (Day 15)"
-echo "  [ ] 2FA rate limit — run: python3 h1_race.py --token-a TOKEN_B --test 2fa"
+echo "  [ ] 2FA rate limit — run: $PY h1_race.py --token-a TOKEN_B --test 2fa"
 echo "  [ ] PullRequest.com — manual browse + Autorize (Day 16)"
 echo "  [ ] Stored XSS — submit report with payloads (Day 14)"
 echo ""

@@ -23,6 +23,8 @@
 
 set -uo pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/external_arsenal.sh"  # for _have
 
@@ -89,7 +91,7 @@ _fetch_dump() {
 _extract_dump() {
   local cache="$1"
   local program="$2"
-  python3 - "$cache" "$program" "$INCLUDE_OOS" <<'PY'
+  "$PY" - "$cache" "$program" "$INCLUDE_OOS" <<'PY'
 import json, sys, re
 
 cache, program, include_oos = sys.argv[1], sys.argv[2].lower(), sys.argv[3] == "1"
@@ -158,7 +160,7 @@ if [ "$LIST_PROGRAMS" = "1" ]; then
   for p in "${PLATFORMS_TO_PULL[@]}"; do
     cache=$(_fetch_dump "$p") || continue
     log "Programs on $p:"
-    python3 - "$cache" <<'PY'
+    "$PY" - "$cache" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
 for entry in data:

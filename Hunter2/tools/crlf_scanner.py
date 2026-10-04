@@ -122,15 +122,17 @@ def _send(url: str, extra_headers: dict[str, str] | None, timeout: int) -> dict[
     headers = {"User-Agent": USER_AGENT}
     if extra_headers:
         headers.update(extra_headers)
-    req = urllib.request.Request(url, headers=headers, method="GET")
     try:
+        req = urllib.request.Request(url, headers=headers, method="GET")
         with safe_urlopen(req, timeout=timeout) as resp:
             return dict(resp.headers.items())
     except urllib.error.HTTPError as e:
         return dict(e.headers.items()) if e.headers else {}
-    except (urllib.error.URLError, TimeoutError, ConnectionError, ValueError):
-        # ValueError: urllib refuses raw \r\n in URL — that's the lib protecting
-        # us; the encoded variants still go out.
+    except Exception:
+        # A single bad payload must never crash the whole scan. Python 3.10+
+        # rejects raw control chars in the request target — on 3.13 that is
+        # http.client.InvalidURL (NOT a ValueError/URLError subclass), so catch
+        # broadly here; the lib is protecting us and the encoded variants still go.
         return {}
 
 

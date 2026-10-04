@@ -7,6 +7,8 @@
 
 set -o pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -78,7 +80,7 @@ _detect_target_type() {
 
 _expand_cidr_hosts() {
     local target="$1"
-    python3 - "$target" <<'PY'
+    "$PY" - "$target" <<'PY'
 import ipaddress
 import itertools
 import sys
@@ -255,7 +257,7 @@ fi
 # crt.sh (certificate transparency)
 log_step "Querying crt.sh..."
 curl -s "https://crt.sh/?q=%25.$TARGET&output=json" 2>/dev/null \
-    | python3 -c "
+    | "$PY" -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -488,7 +490,7 @@ if command -v ffuf &>/dev/null && [ -s "$RECON_DIR/live/urls.txt" ]; then
 
         log_done "Directory fuzzing complete ($FUZZ_COUNT hosts)"
     else
-        log_warn "No wordlist found — run: python3 tools/hunt.py --setup-wordlists"
+        log_warn "No wordlist found — run: $PY tools/hunt.py --setup-wordlists"
     fi
 else
     log_warn "ffuf not installed or no live hosts — skipping directory fuzzing"

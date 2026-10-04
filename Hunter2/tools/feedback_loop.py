@@ -42,6 +42,7 @@ CLI usage from Python:
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -112,6 +113,39 @@ def _short(value) -> str:
     if len(text) > MAX_FIELD_LEN:
         text = text[:MAX_FIELD_LEN]
     return text
+
+
+# Secret-looking substrings are masked out of free-text fields BEFORE they are
+# stored, so the "never stored: credentials, cookies, tokens" promise in the
+# module docstring actually holds even when a caller pastes a raw header or token
+# into technique/reason/endpoint_pattern. Best-effort redaction, not encryption.
+_REDACTED = "<redacted>"
+# Authorization:/Cookie: header lines — mask the whole value after the colon.
+_SECRET_HEADER_RE = re.compile(r"(?i)\b(authorization|cookie)(\s*:\s*)[^\r\n]+")
+# Bearer/Token <value> — mask the credential that follows the scheme word.
+_SECRET_BEARER_RE = re.compile(r"(?i)\b(bearer|token)(\s+)[A-Za-z0-9._\-+/=]+")
+# Bare JWTs: header.payload.signature, each base64url.
+_SECRET_JWT_RE = re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")
+# k=v where k denotes a secret and v is long enough to be one.
+_SECRET_KV_RE = re.compile(
+    r"(?i)\b(session|sessionid|token|auth|sid|jwt)(\s*=\s*)[A-Za-z0-9._\-+/=]{12,}"
+)
+
+
+def _scrub(text: str) -> str:
+    """Mask secret-looking substrings (tokens, cookies, auth headers, JWTs).
+
+    Applied AFTER the length cap so a credential pasted into a free-text field is
+    never persisted. Returns the input unchanged when there is nothing to mask.
+    """
+    if not text:
+        return text
+    s = str(text)
+    s = _SECRET_HEADER_RE.sub(lambda m: f"{m.group(1)}{m.group(2)}{_REDACTED}", s)
+    s = _SECRET_BEARER_RE.sub(lambda m: f"{m.group(1)}{m.group(2)}{_REDACTED}", s)
+    s = _SECRET_JWT_RE.sub(_REDACTED, s)
+    s = _SECRET_KV_RE.sub(lambda m: f"{m.group(1)}{m.group(2)}{_REDACTED}", s)
+    return s
 
 
 def _money(value) -> float:
@@ -214,7 +248,7 @@ def record_submission(
 
         target = _short(target)
         vuln_class = _short(vuln_class)
-        technique = _short(technique)
+        technique = _scrub(_short(technique))
         if not target or not vuln_class or not technique:
             _warn("target, vuln_class and technique are all required")
             return False
@@ -225,10 +259,10 @@ def record_submission(
             "vuln_class": vuln_class,
             "technique": technique,
             "outcome": outcome,
-            "endpoint_pattern": _short(endpoint_pattern),
+            "endpoint_pattern": _scrub(_short(endpoint_pattern)),
             "severity": _short(severity),
             "bounty": _money(bounty),
-            "reason": _short(reason),
+            "reason": _scrub(_short(reason)),
             "schema_version": CURRENT_SCHEMA_VERSION,
         }
         # Correlate with audit.jsonl when the run is authenticated. This is the

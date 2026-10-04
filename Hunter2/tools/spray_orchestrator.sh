@@ -27,6 +27,8 @@
 
 set -euo pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 TARGET_URL=""
 MODE=""
 USERS_FILE=""
@@ -212,13 +214,13 @@ case "$MODE" in
         export SPRAY_CSRF_EXTRACT="$CSRF_EXTRACT"
         export SPRAY_SUCCESS_REGEX="$SUCCESS_REGEX"
         export SPRAY_FAIL_REGEX="$FAIL_REGEX"
-        python3 "$SCRIPT_DIR/_spray_http_form.py"
+        "$PY" "$SCRIPT_DIR/_spray_http_form.py"
         ;;
     oauth)
         export SPRAY_OAUTH_CLIENT_ID="$OAUTH_CLIENT_ID"
         export SPRAY_OAUTH_CLIENT_SECRET="$OAUTH_CLIENT_SECRET"
         export SPRAY_OAUTH_SCOPE="$OAUTH_SCOPE"
-        python3 "$SCRIPT_DIR/_spray_oauth.py"
+        "$PY" "$SCRIPT_DIR/_spray_oauth.py"
         ;;
     o365|okta)
         if ! command -v trevorspray &>/dev/null; then

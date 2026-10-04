@@ -12,6 +12,8 @@
 
 set -uo pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/external_arsenal.sh"
 
@@ -49,7 +51,7 @@ if _have dnsreaper; then
   log "dnsReaper on $(wc -l < "$INPUT" | tr -d ' ') subdomains..."
   dnsreaper file --file "$INPUT" --out "$OUT_DIR/dnsreaper.json" --out-format json 2>/dev/null || true
   if [ -s "$OUT_DIR/dnsreaper.json" ]; then
-    n=$(python3 -c "import json; d=json.load(open('$OUT_DIR/dnsreaper.json')); print(len(d))" 2>/dev/null || echo 0)
+    n=$("$PY" -c "import json; d=json.load(open('$OUT_DIR/dnsreaper.json')); print(len(d))" 2>/dev/null || echo 0)
     [ "$n" -gt 0 ] && hit "dnsReaper: $n candidate(s)" || ok "dnsReaper: clean"
   fi
 fi

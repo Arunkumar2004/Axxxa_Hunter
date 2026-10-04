@@ -182,7 +182,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--query", help="GET URL — prints bracket-injection variants to try")
     ap.add_argument("--timeout", type=int, default=20)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("url", nargs="?", help="GET URL (positional) — same as --query")
     args = ap.parse_args(argv)
+
+    # A bare positional URL behaves like --query (GET bracket-injection mode).
+    if args.url and not args.query:
+        args.query = args.url
 
     if not args.login and not args.query:
         ap.error("provide --login <url> or --query <url>")

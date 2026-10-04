@@ -74,16 +74,25 @@ def extract_idor_endpoints(spec: dict) -> list[dict]:
     return out
 
 
-def build_curls(endpoints: list[dict], base_url: str, token_a: str, token_b: str) -> list[str]:
-    """Pure: for each endpoint, emit an A-vs-B request pair (the IDOR diff)."""
+def build_curls(endpoints: list[dict], base_url: str, token_a: str = "", token_b: str = "") -> list[str]:
+    """Pure: for each endpoint, emit an A-vs-B request pair (the IDOR diff).
+
+    The emitted shell text ALWAYS references ``$TOKEN_A``/``$TOKEN_B`` and never
+    inlines a literal token, so redirecting this plan to a ``.sh`` file (or
+    having it land in shell history) cannot leak a live bearer token. The
+    ``token_a``/``token_b`` arguments are accepted for signature compatibility
+    but are deliberately NOT written into the output — export the real values in
+    the shell before running the plan (``export TOKEN_A=... TOKEN_B=...``).
+    """
     lines: list[str] = []
     for ep in endpoints:
         # Fill path params with a placeholder the hunter replaces with a real A-owned id.
         path = re.sub(r"\{[^}]+\}", "OBJECT_ID", ep["path"])
         url = base_url.rstrip("/") + path
         note = f"# {ep['method']} {ep['path']}  ({', '.join(ep['id_params'])}) {ep['summary']}".rstrip()
-        auth_a = f'-H "Authorization: Bearer {token_a}"' if token_a else '-H "Authorization: Bearer $TOKEN_A"'
-        auth_b = f'-H "Authorization: Bearer {token_b}"' if token_b else '-H "Authorization: Bearer $TOKEN_B"'
+        # Never inline a real token into saved shell output — always placeholders.
+        auth_a = '-H "Authorization: Bearer $TOKEN_A"'
+        auth_b = '-H "Authorization: Bearer $TOKEN_B"'
         lines.append(note)
         lines.append(f'curl -sk -X {ep["method"]} {auth_a} "{url}"   # account A (owns OBJECT_ID)')
         lines.append(f'curl -sk -X {ep["method"]} {auth_b} "{url}"   # account B — IDOR if this returns A\'s data')
@@ -143,6 +152,7 @@ def main(argv=None) -> int:
         print(json.dumps({"base": base, "endpoints": endpoints}, indent=2))
     elif args.sh:
         print("#!/bin/bash\n# Auto-generated IDOR/BOLA test plan. Replace OBJECT_ID with an id account A owns.")
+        print("# Set your tokens first (not written into this file):  export TOKEN_A=... TOKEN_B=...")
         print(f"# Endpoints with object identifiers: {len(endpoints)}\n")
         print("\n".join(build_curls(endpoints, base, args.token_a, args.token_b)))
     else:

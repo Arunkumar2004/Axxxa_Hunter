@@ -83,4 +83,6 @@ class TestApiSpecIdor:
         lines = build_curls(eps, "https://api.t.com", "TA", "TB")
         joined = "\n".join(lines)
         assert "OBJECT_ID" in joined
-        assert "TA" in joined and "TB" in joined
+        # Real tokens must NEVER be inlined into saved shell output — only $TOKEN_A/$TOKEN_B.
+        assert "$TOKEN_A" in joined and "$TOKEN_B" in joined
+        assert "Bearer TA" not in joined and "Bearer TB" not in joined

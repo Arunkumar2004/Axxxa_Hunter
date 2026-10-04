@@ -41,6 +41,27 @@ def which(tool):
             if c2.exists(): return str(c2)
     return None
 
+# Tools that AV (Defender) commonly quarantines on Windows — presence on disk does
+# NOT mean they can execute. We actually try to run them so preflight can't lie.
+_EXEC_PROBE = {"nuclei", "httpx", "dalfox", "subfinder"}
+
+
+def runnable(tool, path):
+    """Return True if the tool actually executes (not just present on disk).
+    Only probed for AV-prone tools; others are assumed runnable if present."""
+    if tool not in _EXEC_PROBE or not path:
+        return True
+    import subprocess
+    for flag in ("-version", "--version", "-h"):
+        try:
+            r = subprocess.run([path, flag], capture_output=True, timeout=8)
+            if r.returncode == 0 or r.stdout or r.stderr:
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def port_open(host, port, t=2.0):
     try:
         with socket.create_connection((host, port), timeout=t):
@@ -96,9 +117,11 @@ def main():
     report = {"tools": {}, "mcp": {}, "agents": 0, "skills": 0, "notes": []}
 
     # tools
+    report["tool_runnable"] = {}
     for t in CORE_TOOLS:
         path = which(t)
         report["tools"][t] = path or None
+        report["tool_runnable"][t] = runnable(t, path) if path else False
 
     # MCP servers (configured != running; MCP loads at Claude Code startup)
     mcp = load_mcp_config()
@@ -137,7 +160,10 @@ def main():
     print("\n-- External tools (recon/vuln pipelines) --")
     present = 0
     for t, p in report["tools"].items():
-        if p:
+        if p and not report.get("tool_runnable", {}).get(t, True):
+            # present on disk but won't execute (AV-quarantined) — do NOT count as armed
+            line("AV", t, p + "  — PRESENT but NOT EXECUTABLE (AV-quarantined; this tool will NOT run)")
+        elif p:
             present += 1
             defmark = " (local bin; Defender may quarantine PD tools)" if "Dukan" in (p or "") or "tools\\bin" in (p or "") else ""
             line(OK, t, p + defmark)

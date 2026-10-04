@@ -19,6 +19,8 @@
 
 set -euo pipefail
 
+PY=""; for _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && { PY="$_c"; break; }; done; PY="${PY:-python3}"
+
 TARGET=""
 COMPANY=""
 SOURCES="duckduckgo,brave,yahoo,mojeek,crtsh,certspotter,hackertarget,otx"
@@ -103,7 +105,7 @@ fi
 
 HARVESTER_JSON="$OUT_DIR/${HARVESTER_BASENAME}.json"
 if [ -f "$HARVESTER_JSON" ]; then
-    python3 -c "
+    "$PY" -c "
 import json
 with open('$HARVESTER_JSON') as f:
     data = json.load(f)
@@ -171,7 +173,7 @@ if [ "$WITH_SOCIAL" = true ] && [ -s "$NAMES" ]; then
     log_ok "Step 5: pydictor personal-password candidates"
     # Use first-name list as base, --extend adds common variations (year, !, 123)
     awk '{print tolower($1)}' "$NAMES" | sort -u > "$OUT_DIR/firstnames-lower.txt"
-    if python3 "$EXT_DIR/pydictor/pydictor.py" \
+    if "$PY" "$EXT_DIR/pydictor/pydictor.py" \
             -extend "$OUT_DIR/firstnames-lower.txt" \
             --level 3 \
             -o "$OUT_DIR/pydictor_raw" >/dev/null 2>&1; then

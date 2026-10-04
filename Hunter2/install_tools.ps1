@@ -22,9 +22,16 @@ if (-not (Test-Path -LiteralPath $manager)) {
     throw "Missing dependency manager: $manager"
 }
 
+$py = $null
+foreach ($c in 'python','python3','py') {
+    $cmd = Get-Command $c -ErrorAction SilentlyContinue
+    if ($cmd) { $py = $cmd.Source; break }
+}
+if (-not $py) { Write-Error 'No Python found (python/python3/py)'; exit 1 }
+
 $args = @($manager, 'install', '--profile', $Profile)
 if ($Yes) { $args += '--yes' }
 if ($DryRun) { $args += '--dry-run' }
 
-& python @args
+& $py @args
 exit $LASTEXITCODE
