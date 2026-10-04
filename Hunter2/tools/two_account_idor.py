@@ -98,11 +98,13 @@ def _similar(body_a: str, body_b: str) -> bool:
 
     Exact match, OR a length ratio above the threshold (small dynamic diffs).
     """
+    # Two empty bodies are NOT "the same data" — an empty 200 from both accounts
+    # (e.g. an ack/action endpoint) must not read as a cross-account leak.
+    if not body_a or not body_b:
+        return False
     if body_a == body_b:
         return True
     la, lb = len(body_a), len(body_b)
-    if la == 0 or lb == 0:
-        return la == lb
     return (min(la, lb) / max(la, lb)) > _LEN_RATIO_THRESHOLD
 
 

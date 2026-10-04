@@ -790,9 +790,41 @@ Generated: {date}
     return path
 
 
+def _redact_secrets(text):
+    """Strip live auth material out of a string before it is persisted to disk.
+    The curl PoC routinely carries a real session Cookie / bearer / token — those
+    must never land in validation.json (credential_store's no-persistence contract)."""
+    if not isinstance(text, str) or not text:
+        return text
+    import re as _re
+    # -H 'Cookie: ...' / -H "Authorization: ..." (quoted or not)
+    text = _re.sub(r'(-H\s+["\']?\s*(?:Cookie|Authorization|X-API-Key|X-Auth-Token)\s*:)[^"\'\n]*',
+                   r'\1 [REDACTED]', text, flags=_re.IGNORECASE)
+    # Bearer <token> / Token <token> anywhere
+    text = _re.sub(r'(?i)\b(bearer|token)\s+[A-Za-z0-9._\-]{12,}', r'\1 [REDACTED]', text)
+    # bare JWTs (three base64url segments)
+    text = _re.sub(r'\beyJ[A-Za-z0-9_\-]{6,}\.[A-Za-z0-9_\-]{6,}\.[A-Za-z0-9_\-]{6,}',
+                   '[REDACTED_JWT]', text)
+    # cookie-ish k=v where the value is long/opaque
+    text = _re.sub(r'(?i)\b(session|sess|sid|token|auth|jwt|access_token)=[^;\s"\'&]{8,}',
+                   r'\1=[REDACTED]', text)
+    return text
+
+
+def _redact_notes(notes):
+    """Return a copy of a gate-notes dict with its curl_poc field redacted."""
+    if not isinstance(notes, dict):
+        return notes
+    out = dict(notes)
+    if "curl_poc" in out:
+        out["curl_poc"] = _redact_secrets(out.get("curl_poc", ""))
+    return out
+
+
 def write_validation_json(output_dir: str, info: dict, gate_notes: dict) -> str:
     """Persist the structured validation answers for future tmux/session pickup."""
     path = os.path.join(output_dir, "validation.json")
+    _curl = _redact_secrets(info.get("curl_poc", ""))
 
     all_pass = all([
         info.get("gate1_pass"), info.get("gate2_pass"),
@@ -813,7 +845,7 @@ def write_validation_json(output_dir: str, info: dict, gate_notes: dict) -> str:
         # validated_finding = all 4 gates passed with real curl PoC
         # scanner_hit = gates failed or no PoC — do not submit
         "status": "validated_finding" if all_pass else "scanner_hit",
-        "curl_poc": info.get("curl_poc", ""),
+        "curl_poc": _curl,
         "scanner_summary": info.get("scanner_summary", {}),
         "rejection_reasons": rejection_reasons,
         "finding": {
@@ -821,7 +853,7 @@ def write_validation_json(output_dir: str, info: dict, gate_notes: dict) -> str:
             "vulnerability_type": info.get("vuln_type"),
             "endpoint":           info.get("endpoint"),
             "impact":             info.get("impact"),
-            "curl_poc":           info.get("curl_poc", ""),
+            "curl_poc":           _curl,
             "cvss_score":         info.get("cvss_score"),
             "cvss_vector":        info.get("cvss_vector"),
             "cvss_params":        info.get("cvss_params"),
@@ -829,7 +861,7 @@ def write_validation_json(output_dir: str, info: dict, gate_notes: dict) -> str:
         "gates": {
             "is_real":      {"passed": info.get("gate1_pass"), "notes": gate_notes["gate1"]},
             "in_scope":     {"passed": info.get("gate2_pass"), "notes": gate_notes["gate2"]},
-            "exploitable":  {"passed": info.get("gate3_pass"), "notes": gate_notes["gate3"]},
+            "exploitable":  {"passed": info.get("gate3_pass"), "notes": _redact_notes(gate_notes["gate3"])},
             "not_duplicate":{"passed": info.get("gate4_pass"), "notes": gate_notes["gate4"]},
         },
     }

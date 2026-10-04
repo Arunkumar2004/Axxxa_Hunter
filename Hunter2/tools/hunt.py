@@ -573,6 +573,11 @@ def run_graphql_audit(domain):
         log("info", "No GraphQL endpoints found — skip graphql audit")
         return False
 
+    bash = shutil.which("bash")
+    if not bash:
+        log("warn", "bash not found — skip graphql audit")
+        return False
+
     child_env = os.environ.copy()
     if _AUTH_SESSION is not None:
         _AUTH_SESSION.export_to_env(child_env)
@@ -582,16 +587,20 @@ def run_graphql_audit(domain):
         log("info", f"GraphQL audit: {url}")
         out_dir = os.path.join(FINDINGS_DIR, domain, "graphql")
         os.makedirs(out_dir, exist_ok=True)
+        proc = None
         try:
             proc = subprocess.Popen(
-                ["bash", str(script), url, "--output-dir", out_dir],
+                [bash, str(script), url, "--output-dir", out_dir],
                 shell=False, cwd=BASE_DIR, env=child_env,
             )
             proc.wait(timeout=600)
             any_ok = any_ok or proc.returncode == 0
         except subprocess.TimeoutExpired:
-            proc.kill()
+            if proc is not None:
+                proc.kill()
             log("err", f"GraphQL audit timed out for {url}")
+        except Exception as e:  # noqa: BLE001 - launch failure must not abort the hunt
+            log("warn", f"GraphQL audit failed to launch: {type(e).__name__}: {e}")
     return any_ok
 
 
@@ -678,7 +687,11 @@ def run_extended_scans(domain, quick=False):
             log("warn", f"  {name}: {script_name} missing — skip")
             continue
 
-        cmd = ["python3", script, "-l", url_list, "--json", *extra]
+        # Use sys.executable, NOT a literal "python3" — on Windows "python3" is a
+        # Store alias stub that doesn't run, which silently killed the whole
+        # extended-scan phase. (run_cmd translates python3→sys.executable; this
+        # direct Popen call must do the same.)
+        cmd = [sys.executable, script, "-l", url_list, "--json", *extra]
         if cookie:
             cmd += ["--cookie", cookie]
         if name == "xxe" and oob_domain:
@@ -820,8 +833,11 @@ def run_two_account_idor(domain, unsafe=False):
     out_dir = os.path.join(FINDINGS_DIR, domain)
     os.makedirs(out_dir, exist_ok=True)
     out_file = os.path.join(out_dir, "two_account_idor.json")
+    # Drop the raw response-body snippet before persisting — it can carry PII.
+    # (It stays in interactive stdout; only the on-disk artifact is scrubbed.)
+    persisted = [{k: v for k, v in f.items() if k != "snippet"} for f in findings]
     with open(out_file, "w", encoding="utf-8") as fh:
-        json.dump(findings, fh, indent=2)
+        json.dump(persisted, fh, indent=2)
 
     hits = [f for f in findings if f.get("verdict") == "POSSIBLE_IDOR"]
     if hits:
@@ -1034,20 +1050,26 @@ def run_zero_day_fuzzer(domain, deep=False):
     script = os.path.join(TOOLS_DIR, "zero_day_fuzzer.py")
     deep_flag = "--deep" if deep else ""
 
-    # Check if we have recon data with live URLs
+    # sys.executable, not a literal "python3" (Store-alias stub on Windows).
     recon_dir = os.path.join(RECON_DIR, domain)
+    cmd = [sys.executable, script, f"https://{domain}"]
     if os.path.isdir(recon_dir):
-        cmd = f'python3 "{script}" "https://{domain}" --recon-dir "{recon_dir}" {deep_flag}'
-    else:
-        cmd = f'python3 "{script}" "https://{domain}" {deep_flag}'
+        cmd += ["--recon-dir", recon_dir]
+    if deep:
+        cmd.append("--deep")
 
+    proc = None
     try:
-        proc = subprocess.Popen(shlex.split(cmd, posix=os.name != "nt"), shell=False, cwd=BASE_DIR)
+        proc = subprocess.Popen(cmd, shell=False, cwd=BASE_DIR)
         proc.wait(timeout=900)
         return proc.returncode == 0
     except subprocess.TimeoutExpired:
-        proc.kill()
+        if proc is not None:
+            proc.kill()
         log("err", f"Zero-day fuzzer timed out for {domain}")
+        return False
+    except Exception as e:  # noqa: BLE001 - launch failure must not abort the hunt
+        log("warn", f"Zero-day fuzzer failed to launch: {type(e).__name__}: {e}")
         return False
 
 
@@ -1384,6 +1406,10 @@ Examples:
         result = hunt_target(
             primary_domain,
             quick=args.quick,
+            recon_only=args.recon_only,
+            scan_only=args.scan_only,
+            cve_hunt=args.cve_hunt,
+            zero_day=args.zero_day,
             skip_leads=args.skip_leads,
             graphql=args.graphql,
             extended=not args.no_extended,

@@ -32,9 +32,9 @@ _RAW_ALIASES: dict[str, str] = {
     # api / mass assignment fallback
     "mass assignment": "api-auth",
     "bopla": "api-auth",
-    "bola": "api-auth",
-    # idor / bola (takes precedence over the fallback above)
+    # idor / bola — BOLA is OWASP-API #1, synonymous with IDOR → the dedicated playbook
     "idor": "idor-bola",
+    "bola": "idor-bola",
     "bfla": "idor-bola",
     "broken access control": "idor-bola",
     "insecure direct object": "idor-bola",

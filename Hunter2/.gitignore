@@ -45,3 +45,6 @@ tools/bin/*
 memory/leads/
 .playwright-browsers/
 .venv-pw/
+memory/*.jsonl
+memory/hunt_outcomes.jsonl
+memory/feedback_outcomes.jsonl

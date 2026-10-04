@@ -224,7 +224,7 @@ def build_graph(target: str) -> dict:
     for key in endpoints:
         m = re.search(r"/(v\d+)(/|$)", key, re.I)
         if m:
-            base = key[:m.start()] + key[m.end()-1:]
+            base = key[:m.start()] + key[m.end(1):]
             ver_by_base[base].add(m.group(1).lower())
     for base, vers in ver_by_base.items():
         if len(vers) > 1:

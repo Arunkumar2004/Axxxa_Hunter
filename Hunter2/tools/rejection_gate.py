@@ -129,7 +129,7 @@ REJECTION_RULES: list[dict] = [
         "id": "open_redirect",
         "label": "Open redirect alone (no ATO / OAuth-token-theft chain)",
         "patterns": [
-            r"open\s+redirect",
+            r"open[-\s_]?redirect",
         ],
         "chain_saver": "Chain into OAuth redirect_uri auth-code/token theft for ATO (Critical).",
     },
