@@ -251,7 +251,19 @@ def load_playbook(vuln_class: str) -> dict | None:
     }
 
 
+def _force_utf8_stdout() -> None:
+    """Playbook text carries bullets/box-drawing/emoji; on Windows the default
+    cp1252 stdout raises UnicodeEncodeError when those are printed. Reconfigure
+    to UTF-8 with replacement so a hunt never crashes on output encoding."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    _force_utf8_stdout()
     ap = argparse.ArgumentParser(description="Auto-load the real-world playbook for a vuln class")
     ap.add_argument("vuln_class", nargs="?", help="class name or alias (e.g. idor, ssrf, 'account takeover')")
     ap.add_argument("--list", action="store_true", help="list available class slugs")

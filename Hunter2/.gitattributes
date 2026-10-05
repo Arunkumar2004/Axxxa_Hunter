@@ -1,0 +1,6 @@
+# Keep shell scripts and Python LF-only so they run under bash/WSL/Linux.
+# CRLF in a *.sh file makes the kernel read `#!/usr/bin/env bash\r` as a bad
+# interpreter and the whole script fails. selftest.py flags any regression.
+*.sh    text eol=lf
+*.py    text eol=lf
+*.bash  text eol=lf

@@ -20,6 +20,7 @@ Output: JSON report to stdout + summary lines. No destructive writes.
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -32,6 +33,11 @@ try:
 except ImportError:
     print("ERROR: requests not installed. Run: pip install requests")
     sys.exit(1)
+
+try:  # SPA catch-all filter - ships alongside this script in tools/
+    from spa_baseline import probe as _spa_probe
+except ImportError:  # pragma: no cover - only if the file is moved
+    _spa_probe = None
 
 UA = "api-security-scanner/1.0"
 TIMEOUT = 10
@@ -60,6 +66,7 @@ class Session:
         self.auth = auth  # ("bearer", token) or None
         self.cookie = cookie
         self.second_token = second_token
+        self.baseline = None  # set to a spa_baseline.Baseline after probing
         self.s = requests.Session()
         self.s.headers["User-Agent"] = UA
         if cookie:
@@ -79,6 +86,19 @@ class Session:
             return r
         except requests.RequestException:
             return None
+
+    def is_noise(self, r) -> bool:
+        """True when a response is a dead end: no response, or just the SPA
+        catch-all shell. Lets every check skip the shell instead of treating
+        a 200-HTML-for-everything host as a wall of live endpoints."""
+        if r is None:
+            return True
+        if self.baseline is not None:
+            try:
+                return self.baseline.is_catchall(r.status_code, r.text)
+            except Exception:
+                return False
+        return False
 
     def post(self, path, **kw):
         try:
@@ -113,6 +133,52 @@ def try_specs(sc: Session):
     return hits
 
 
+def _parse_spec_text(text):
+    """Parse a spec document (JSON first, YAML if available)."""
+    if not text:
+        return None
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+    try:
+        import yaml  # optional; OpenAPI is often YAML
+        return yaml.safe_load(text)
+    except Exception:
+        return None
+
+
+def load_spec(sc: "Session", spec_arg: str):
+    """Load an OpenAPI/Swagger spec from a local file, a full URL, or a base
+    path. The old code reduced every --spec value to its URL path and refetched
+    it from the base host, so a local file (``./swagger.json``) or an off-host
+    spec URL could never be used. All three forms now work."""
+    # 1. local file on disk - the common case when swagger.json is saved during recon
+    try:
+        if os.path.isfile(spec_arg):
+            with open(spec_arg, "r", encoding="utf-8", errors="replace") as fh:
+                return _parse_spec_text(fh.read())
+    except OSError:
+        return None
+
+    parsed = urllib.parse.urlparse(spec_arg)
+    # 2. absolute URL - fetch it directly (possibly a different host/CDN)
+    if parsed.scheme in ("http", "https") and parsed.netloc:
+        try:
+            r = requests.get(spec_arg, timeout=TIMEOUT,
+                             headers={"User-Agent": UA})
+            return _parse_spec_text(r.text)
+        except requests.RequestException:
+            return None
+
+    # 3. bare path - fetch it from the scanned base host (original behaviour)
+    path = spec_arg if spec_arg.startswith("/") else "/" + spec_arg
+    r = sc.get(path)
+    if r is not None:
+        return _parse_spec_text(r.text)
+    return None
+
+
 def extract_paths(spec):
     paths = []
     if not spec:
@@ -129,7 +195,7 @@ def endpoint_candidates(sc: Session):
     candidates = set()
     for p in ["/api", "/api/v1", "/api/v2", "/v1", "/v2", "/rest", "/api/v3"]:
         r = sc.get(p)
-        if r is not None and r.status_code not in (404, 405, 403, 401):
+        if not sc.is_noise(r) and r.status_code not in (404, 405, 403, 401):
             candidates.add(p)
     return sorted(candidates)
 
@@ -138,7 +204,7 @@ def check_auth_gaps(sc: Session, paths):
     findings = []
     for ep in paths[:40]:
         r = sc.get(ep["path"])
-        if r is None:
+        if sc.is_noise(r):
             continue
         missing = not any(h.lower() in {k.lower() for k in r.request.headers}
                           for h in AUTH_HEADERS)
@@ -160,7 +226,7 @@ def check_bola(sc: Session, paths, base_id, second_token=None):
             continue
         probe = re.sub(r"\{(\w+)\}", str(base_id), path)
         r = sc.get(probe)
-        if r is None:
+        if sc.is_noise(r):
             continue
         if r.status_code != 200:
             continue
@@ -237,7 +303,7 @@ def check_sensitive_exposure(sc: Session, paths):
     findings = []
     for ep in paths[:40]:
         r = sc.get(ep["path"])
-        if r is None or r.status_code != 200:
+        if sc.is_noise(r) or r.status_code != 200:
             continue
         body = r.text.lower()
         for f in SENSITIVE_FIELDS:
@@ -277,7 +343,7 @@ def check_debug(sc: Session):
     findings = []
     for p in DEBUG_PATHS:
         r = sc.get(p)
-        if r is None:
+        if sc.is_noise(r):
             continue
         if r.status_code == 200 and len(r.text) > 30:
             findings.append({
@@ -293,7 +359,7 @@ def check_versions(sc: Session):
     findings = []
     for v in ("v1", "v2", "v3"):
         r = sc.get(f"/{v}")
-        if r is not None and r.status_code not in (404, 405):
+        if not sc.is_noise(r) and r.status_code not in (404, 405):
             findings.append({"type": "version-live", "endpoint": f"/{v}", "status": r.status_code})
     return findings
 
@@ -304,26 +370,38 @@ def main():
     ap.add_argument("--auth", nargs=2, metavar=("KIND", "VALUE"),
                     help="auth kind: bearer|basic|raw, value")
     ap.add_argument("--cookie", help="cookie header value")
-    ap.add_argument("--spec", help="known spec URL (skips discovery)")
-    ap.add_argument("--id", type=int, default=1001, help="base object id for BOLA probes")
+    ap.add_argument("--spec", help="spec as a local file path, a full URL, or a base path")
+    ap.add_argument("--id", default="1001",
+                    help="base object id for BOLA probes (integer, UUID, or slug)")
     ap.add_argument("--second-token", help="second identity bearer token (BOLA proof)")
     ap.add_argument("--max-paths", type=int, default=40, help="cap endpoints probed")
+    ap.add_argument("--no-spa-filter", action="store_true",
+                    help="keep every 200 response (disable the SPA catch-all filter)")
     ap.add_argument("--json", action="store_true", help="print JSON only")
     args = ap.parse_args()
 
     sc = Session(args.base, auth=args.auth, cookie=args.cookie,
                  second_token=args.second_token)
 
-    report = {"target": args.base, "spec_found": [], "endpoints": [], "findings": []}
+    # Fingerprint the SPA/edge catch-all shell up front so no check mistakes
+    # the "200 HTML for every path" response for a live endpoint or a file.
+    if _spa_probe is not None and not args.no_spa_filter:
+        def _fetch(path):
+            r = sc.get(path)
+            return (r.status_code, r.text) if r is not None else None
+        sc.baseline = _spa_probe(_fetch)
+
+    report = {"target": args.base, "spec_found": [], "endpoints": [], "findings": [],
+              "spa_catchall": sc.baseline.summary() if sc.baseline else None}
 
     specs = []
     if args.spec:
-        r = sc.get(urllib.parse.urlparse(args.spec).path)
-        if r is not None:
-            try:
-                specs.append(r.json())
-            except Exception:
-                pass
+        spec = load_spec(sc, args.spec)
+        if spec:
+            specs.append(spec)
+            n_paths = len(spec.get("paths", {})) if isinstance(spec, dict) else 0
+            report["spec_found"] = [{"path": args.spec, "source": "loaded",
+                                     "paths": n_paths}]
     else:
         hits = try_specs(sc)
         report["spec_found"] = hits
@@ -362,6 +440,8 @@ def main():
         return
 
     print(f"\n[+] API security scan: {args.base}")
+    if report.get("spa_catchall"):
+        print(f"    SPA filter: {report['spa_catchall']}")
     print(f"    Specs found: {len(report['spec_found'])} | Endpoints: {len(report['endpoints'])}")
     if not findings:
         print("    No candidates found (try --auth/--second-token for deeper checks).")

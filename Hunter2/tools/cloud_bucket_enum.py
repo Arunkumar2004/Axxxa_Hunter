@@ -32,6 +32,9 @@ except ImportError:
 TIMEOUT = 8
 UA = "cloud-bucket-enum/1.0"
 
+# getaddrinfo() ignores per-call timeouts; bound every DNS/socket op globally.
+socket.setdefaulttimeout(5)
+
 PROVIDERS = [
     {"name": "s3", "host": "{b}.s3.amazonaws.com", "list_url": "https://{b}.s3.amazonaws.com/?list-type=2",
      "notfound": ["nosuchbucket", "nosuchkey", "accessdenied but bucket does not exist"],
@@ -66,8 +69,11 @@ def candidates_for_domain(domain):
 
 
 def resolve(host):
+    # socket.getaddrinfo() takes no timeout kwarg (passing one raised TypeError,
+    # which the broad except swallowed so every lookup silently "failed"). Bound
+    # the lookup with a module-level default socket timeout instead.
     try:
-        socket.getaddrinfo(host, None, timeout=5)
+        socket.getaddrinfo(host, None)
         return True
     except socket.gaierror:
         return False
@@ -78,11 +84,14 @@ def resolve(host):
 def check_provider(sc, bucket, prov):
     out = {"bucket": bucket, "provider": prov["name"], "dns": False, "list": None,
            "status": "not-found"}
-    host = prov["host"].format(b=bucket, r="us-east-1")
+    # Both host and list_url may contain a {r} region placeholder (s3-website,
+    # digitalocean). Formatting list_url with b= only raised KeyError: 'r'.
+    region = REGIONS[0]
+    host = prov["host"].format(b=bucket, r=region)
     out["dns"] = resolve(host)
     if not prov.get("list_url"):
         return out
-    url = prov["list_url"].format(b=bucket)
+    url = prov["list_url"].format(b=bucket, r=region)
     try:
         r = sc.get(url, timeout=TIMEOUT, allow_redirects=False)
     except requests.RequestException:
@@ -132,12 +141,13 @@ def main():
                 results.append(res)
                 if res["status"] == "PUBLIC-READ" and args.test_write:
                     canary = f"bbhunt-canary-{int(__import__('time').time())}.txt"
+                    base_url = prov["list_url"].format(b=b, r=REGIONS[0]).split("?")[0]
                     try:
-                        put = sc.put(prov["list_url"].format(b=b).split("?")[0] + f"/{canary}",
+                        put = sc.put(base_url + f"/{canary}",
                                      data="probe", timeout=TIMEOUT)
                         if put.status_code in (200, 204):
                             res["status"] = "PUBLIC-WRITE"
-                            sc.delete(prov["list_url"].format(b=b).split("?")[0] + f"/{canary}")
+                            sc.delete(base_url + f"/{canary}")
                     except requests.RequestException:
                         pass
 
